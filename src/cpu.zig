@@ -592,12 +592,6 @@ pub const CPU = struct {
         return (most_significant_byte << 8) | least_significant_byte;
     }
 
-    fn getFlags(self: *CPU) FlagsRegister {
-        const flags = FlagsRegister{};
-        flags.fromInt(self.registers.flags);
-        return flags;
-    }
-
     fn popStackPointer(self: *CPU) u16 {
         const least_significant_byte: u16 = self.memoryBus.readByte(self.registers.stack_pointer);
         self.registers.stack_pointer +%= 1;
@@ -776,13 +770,10 @@ pub const CPU = struct {
 
     fn increment(self: *CPU, value: u8) u8 {
         const new_value = value +% 1;
-        var flags = self.getFlags();
 
-        flags.zero = new_value == 0;
-        flags.subtract = false;
-        flags.half_carry = value & 0xF == 0xF;
-
-        self.registers.flags = flags.toInt();
+        self.registers.flags.zero = new_value == 0;
+        self.registers.flags.subtract = false;
+        self.registers.flags.half_carry = value & 0xF == 0xF;
 
         return new_value;
     }
@@ -830,13 +821,10 @@ pub const CPU = struct {
 
     fn decrement(self: *CPU, value: u8) u8 {
         const new_value = value -% 1;
-        var flags = self.getFlags();
 
-        flags.zero = new_value == 0;
-        flags.subtract = true;
-        flags.half_carry = value & 0xF == 0x0;
-
-        self.registers.flags = flags.toInt();
+        self.registers.flags.zero = new_value == 0;
+        self.registers.flags.subtract = true;
+        self.registers.flags.half_carry = value & 0xF == 0x0;
 
         return new_value;
     }
@@ -1323,8 +1311,7 @@ pub const CPU = struct {
     }
 
     fn addToAccumulator(self: *CPU, value: u8, with_carry: bool) void {
-        var flags = self.getFlags();
-        const carry = if (with_carry) @intFromBool(flags.carry) else 0;
+        const carry = if (with_carry) @intFromBool(self.registers.flags.carry) else 0;
 
         const add_with_did_overflow = @addWithOverflow(self.registers.accumulator, value);
         const add = add_with_did_overflow[0];
@@ -1334,12 +1321,11 @@ pub const CPU = struct {
         const add_with_carry = add_with_carry_with_did_overflow[0];
         const add_with_carry_did_overflow = add_with_carry_with_did_overflow[1];
 
-        flags.zero = add_with_carry == 0;
-        flags.subtract = false;
-        flags.carry = add_did_overflow || add_with_carry_did_overflow;
-        flags.half_carry = ((self.registers.accumulator & 0xF) + (value & 0xF) + carry) > 0xF;
+        self.registers.flags.zero = add_with_carry == 0;
+        self.registers.flags.subtract = false;
+        self.registers.flags.carry = add_did_overflow || add_with_carry_did_overflow;
+        self.registers.flags.half_carry = ((self.registers.accumulator & 0xF) + (value & 0xF) + carry) > 0xF;
 
-        self.registers.flags = flags.toInt();
         self.registers.accumulator = add_with_carry;
     }
 
@@ -1434,8 +1420,7 @@ pub const CPU = struct {
     }
 
     fn subToAccumulator(self: *CPU, value: u8, with_carry: bool) void {
-        var flags = self.getFlags();
-        const carry = if (with_carry) @intFromBool(flags.carry) else 0;
+        const carry = if (with_carry) @intFromBool(self.registers.flags.carry) else 0;
 
         const sub_with_did_overflow = @subWithOverflow(self.registers.accumulator, value);
         const sub = sub_with_did_overflow[0];
@@ -1445,12 +1430,11 @@ pub const CPU = struct {
         const sub_with_carry = sub_with_carry_with_did_overflow[0];
         const sub_with_carry_did_overflow = sub_with_carry_with_did_overflow[1];
 
-        flags.zero = sub_with_carry == 0;
-        flags.subtract = false;
-        flags.carry = sub_did_overflow || sub_with_carry_did_overflow;
-        flags.half_carry = (self.registers.accumulator & 0xF) < (value & 0xF) + carry;
+        self.registers.flags.zero = sub_with_carry == 0;
+        self.registers.flags.subtract = false;
+        self.registers.flags.carry = sub_did_overflow || sub_with_carry_did_overflow;
+        self.registers.flags.half_carry = (self.registers.accumulator & 0xF) < (value & 0xF) + carry;
 
-        self.registers.flags = flags.toInt();
         self.registers.accumulator = sub_with_carry;
     }
 
@@ -1501,14 +1485,12 @@ pub const CPU = struct {
 
     fn andToAccumulator(self: *CPU, value: u8) void {
         const new_value = self.register.accumulator & value;
-        var flags = self.getFlags();
 
-        flags.zero = new_value == 0;
-        flags.subtract = false;
-        flags.carry = false;
-        flags.half_carry = true;
+        self.registers.flags.zero = new_value == 0;
+        self.registers.flags.subtract = false;
+        self.registers.flags.carry = false;
+        self.registers.flags.half_carry = true;
 
-        self.registers.flags = flags.toInt();
         self.registers.accumulator = new_value;
     }
 
@@ -1559,14 +1541,12 @@ pub const CPU = struct {
 
     fn xorToAccumulator(self: *CPU, value: u8) void {
         const new_value = self.register.accumulator ^ value;
-        var flags = self.getFlags();
 
-        flags.zero = new_value == 0;
-        flags.subtract = false;
-        flags.carry = false;
-        flags.half_carry = false;
+        self.registers.flags.zero = new_value == 0;
+        self.registers.flags.subtract = false;
+        self.registers.flags.carry = false;
+        self.registers.flags.half_carry = false;
 
-        self.registers.flags = flags.toInt();
         self.registers.accumulator = new_value;
     }
 
@@ -1617,14 +1597,12 @@ pub const CPU = struct {
 
     fn orToAccumulator(self: *CPU, value: u8) void {
         const new_value = self.register.accumulator | value;
-        var flags = self.getFlags();
 
-        flags.zero = new_value == 0;
-        flags.subtract = false;
-        flags.carry = false;
-        flags.half_carry = false;
+        self.registers.flags.zero = new_value == 0;
+        self.registers.flags.subtract = false;
+        self.registers.flags.carry = false;
+        self.registers.flags.half_carry = false;
 
-        self.registers.flags = flags.toInt();
         self.registers.accumulator = new_value;
     }
 
@@ -1674,14 +1652,10 @@ pub const CPU = struct {
     }
 
     fn compareToAccumulator(self: *CPU, value: u8) void {
-        var flags = self.getFlags();
-
-        flags.zero = self.registers.accumulator == value;
-        flags.subtract = true;
-        flags.carry = self.registers.accumulator < value;
-        flags.half_carry = (self.registers.accumulator & 0xF) < (value & 0xF);
-
-        self.registers.flags = flags.toInt();
+        self.registers.flags.zero = self.registers.accumulator == value;
+        self.registers.flags.subtract = true;
+        self.registers.flags.carry = self.registers.accumulator < value;
+        self.registers.flags.half_carry = (self.registers.accumulator & 0xF) < (value & 0xF);
     }
 
     fn rotateLeftAccumulatorRegister(self: *CPU) u8 {
@@ -1693,12 +1667,10 @@ pub const CPU = struct {
         const carry: bool = @intCast((value & 0b1000_0000) >> 7);
         const new_value = std.math.rotl(u8, value, 1) | carry;
 
-        const flags = self.getFlags();
-        flags.zero = set_zero and new_value == 0;
-        flags.subtract = 0;
-        flags.half_carry = 0;
-        flags.carry = carry;
-        self.registers.flags = flags.toInt();
+        self.registers.flags.zero = set_zero and new_value == 0;
+        self.registers.flags.subtract = 0;
+        self.registers.flags.half_carry = 0;
+        self.registers.flags.carry = carry;
 
         return new_value;
     }
@@ -1709,16 +1681,13 @@ pub const CPU = struct {
     }
 
     fn rotateLeftThroughCarry(self: *CPU, value: u8, set_zero: bool) u8 {
-        const flags = self.getFlags();
-        const carry_bit = @intFromBool(flags.carry);
+        const carry_bit = @intFromBool(self.registers.flags.carry);
         const new_value = (value << 1) | carry_bit;
 
-        flags.zero = set_zero and new_value == 0;
-        flags.subtract = false;
-        flags.half_carry = false;
-        flags.carry = (value & 0b1000_0000) == 0b1000_0000;
-
-        self.registers.flags = flags.toInt();
+        self.registers.flags.zero = set_zero and new_value == 0;
+        self.registers.flags.subtract = false;
+        self.registers.flags.half_carry = false;
+        self.registers.flags.carry = (value & 0b1000_0000) == 0b1000_0000;
 
         return new_value;
     }
@@ -1730,14 +1699,11 @@ pub const CPU = struct {
 
     fn rotateRight(self: *CPU, value: u8, set_zero: bool) u8 {
         const new_value = std.math.rotr(u8, value, 1);
-        const flags = self.getFlags();
 
-        flags.zero = set_zero and new_value == 0;
-        flags.subtract = false;
-        flags.half_carry = false;
-        flags.carry = value & 0b1 == 0b1;
-
-        self.registers.flags = flags.toInt();
+        self.registers.flags.zero = set_zero and new_value == 0;
+        self.registers.flags.subtract = false;
+        self.registers.flags.half_carry = false;
+        self.registers.flags.carry = value & 0b1 == 0b1;
 
         return new_value;
     }
@@ -1748,16 +1714,13 @@ pub const CPU = struct {
     }
 
     fn rotateRightThroughCarry(self: *CPU, value: u8, set_zero: bool) u8 {
-        const flags = self.getFlags();
-        const carry_bit = @intFromBool(flags.carry) << 7;
+        const carry_bit = @intFromBool(self.registers.flags.carry) << 7;
         const new_value = carry_bit | (value >> 1);
 
-        flags.zero = set_zero and new_value == 0;
-        flags.subtract = false;
-        flags.half_carry = false;
-        flags.carry = value & 0b1 == 0b1;
-
-        self.registers.flags = flags.toInt();
+        self.registers.flags.zero = set_zero and new_value == 0;
+        self.registers.flags.subtract = false;
+        self.registers.flags.half_carry = false;
+        self.registers.flags.carry = value & 0b1 == 0b1;
 
         return new_value;
     }
@@ -1783,19 +1746,17 @@ pub const CPU = struct {
     }
 
     fn addToHLRegister(self: *CPU, value: u16) void {
-        var flags = self.getFlags();
         const hl = self.registers.getHL();
         const new_value_with_did_overflow: u16 = @addWithOverflow(hl, value);
         const new_value = new_value_with_did_overflow[0];
         const did_overflow = new_value_with_did_overflow[1];
 
-        flags.subtract = false;
-        flags.carry = @bitCast(did_overflow);
+        self.registers.flags.subtract = false;
+        self.registers.flags.carry = @bitCast(did_overflow);
 
         const mask = 0b0000_0111_1111_1111;
-        flags.half_carry = (value & mask) + (hl & mask) > mask;
+        self.registers.flags.half_carry = (value & mask) + (hl & mask) > mask;
 
-        self.registers.flags = flags.toInt();
         self.registers.setHL(new_value);
     }
 
@@ -1805,19 +1766,19 @@ pub const CPU = struct {
     }
 
     fn jumpRelativeIfZero(self: *CPU) u8 {
-        return jumpRelativeWithCondition(self.getFlags().zero);
+        return jumpRelativeWithCondition(self.registers.flags.zero);
     }
 
     fn jumpRelativeIfCarry(self: *CPU) u8 {
-        return jumpRelativeWithCondition(self.getFlags().carry);
+        return jumpRelativeWithCondition(self.registers.flags.carry);
     }
 
     fn jumpRelativeIfNotZero(self: *CPU) u8 {
-        return jumpRelativeWithCondition(!self.getFlags().zero);
+        return jumpRelativeWithCondition(!self.registers.flags.zero);
     }
 
     fn jumpRelativeIfNotCarry(self: *CPU) u8 {
-        return jumpRelativeWithCondition(!self.getFlags().carry);
+        return jumpRelativeWithCondition(!self.registers.flags.carry);
     }
 
     fn jumpRelativeWithCondition(self: *CPU, condition: bool) u8 {
@@ -1832,23 +1793,19 @@ pub const CPU = struct {
     }
 
     fn returnIfNotZero(self: *CPU) u8 {
-        const flags = self.getFlags();
-        return self.returnIf(!flags.zero);
+        return self.returnIf(!self.registers.flags.zero);
     }
 
     fn returnIfNotCarry(self: *CPU) u8 {
-        const flags = self.getFlags();
-        return self.returnIf(!flags.carry);
+        return self.returnIf(!self.registers.flags.carry);
     }
 
     fn returnIfZero(self: *CPU) u8 {
-        const flags = self.getFlags();
-        return self.returnIf(flags.zero);
+        return self.returnIf(self.registers.flags.zero);
     }
 
     fn returnIfCarry(self: *CPU) u8 {
-        const flags = self.getFlags();
-        return self.returnIf(flags.carry);
+        return self.returnIf(self.registers.flags.carry);
     }
 
     fn returnAlways(self: *CPU) u8 {
@@ -1872,19 +1829,19 @@ pub const CPU = struct {
     }
 
     fn jumpIfNotZero(self: *CPU) u8 {
-        return self.jumpIf(!self.getFlags().zero);
+        return self.jumpIf(!self.registers.flags.zero);
     }
 
     fn jumpIfNotCarry(self: *CPU) u8 {
-        return self.jumpIf(!self.getFlags().carry);
+        return self.jumpIf(!self.registers.flags.zero);
     }
 
     fn jumpIfZero(self: *CPU) u8 {
-        return self.jumpIf(self.getFlags().zero);
+        return self.jumpIf(self.registers.flags.zero);
     }
 
     fn jumpIfCarry(self: *CPU) u8 {
-        return self.jumpIf(self.getFlags().carry);
+        return self.jumpIf(self.registers.flags.carry);
     }
 
     fn jumpAlways(self: *CPU) u8 {
@@ -1901,19 +1858,19 @@ pub const CPU = struct {
     }
 
     fn callIfNotZero(self: *CPU) u8 {
-        return self.callIf(!self.getFlags().zero);
+        return self.callIf(!self.registers.flags.zero);
     }
 
     fn callIfNotCarry(self: *CPU) u8 {
-        return self.callIf(!self.getFlags().carry);
+        return self.callIf(!self.registers.flags.carry);
     }
 
     fn callIfZero(self: *CPU) u8 {
-        return self.callIf(self.getFlags().zero);
+        return self.callIf(self.registers.flags.zero);
     }
 
     fn callIfCarry(self: *CPU) u8 {
-        return self.callIf(self.getFlags().carry);
+        return self.callIf(self.registers.flags.carry);
     }
 
     fn callAlways(self: *CPU) u8 {
@@ -2021,48 +1978,43 @@ pub const CPU = struct {
     }
 
     fn decimalAdjust(self: *CPU, value: u8) u8 {
-        var flags = self.getFlags();
         var carry = false;
 
         var result: u8 = 0x0;
 
-        if (!flags.subtract) {
+        if (!self.registers.flags.subtract) {
             var tempResult = value;
 
-            if (flags.carry || value > 0x99) {
+            if (self.registers.flags.carry || value > 0x99) {
                 carry = true;
                 tempResult +%= 0x60;
             }
 
-            if (flags.half_carry || value & 0x0F > 0x09) {
+            if (self.registers.flags.half_carry || value & 0x0F > 0x09) {
                 tempResult +%= 0x06;
             }
 
             result = tempResult;
-        } else if (flags.carry) {
+        } else if (self.registers.flags.carry) {
             carry = true;
-            result = value +% (if (flags.half_carry) 0x9A else 0xA0);
-        } else if (flags.half_carry) {
+            result = value +% (if (self.registers.flags.half_carry) 0x9A else 0xA0);
+        } else if (self.registers.flags.half_carry) {
             result = value +% 0xFA;
         } else {
             result = value;
         }
 
-        flags.zero = result == 0;
-        flags.half_carry = false;
-        flags.carry = carry;
-
-        self.registers.flags = flags.toInt();
+        self.registers.flags.zero = result == 0;
+        self.registers.flags.half_carry = false;
+        self.registers.flags.carry = carry;
 
         return result;
     }
 
     fn setCarryFlag(self: *CPU) u8 {
-        var flags = self.getFlags();
-        flags.subtract = false;
-        flags.half_carry = false;
-        flags.carry = true;
-        self.registers.flags = flags.toInt();
+        self.registers.flags.subtract = false;
+        self.registers.flags.half_carry = false;
+        self.registers.flags.carry = true;
         return 4;
     }
 
@@ -2073,19 +2025,15 @@ pub const CPU = struct {
 
     fn complement(self: *CPU, value: u8) u8 {
         const new_value = ~value;
-        var flags = self.getFlags();
-        flags.subtract = true;
-        flags.half_carry = true;
-        self.registers.flags = flags.toInt();
+        self.registers.flags.subtract = true;
+        self.registers.flags.half_carry = true;
         return new_value;
     }
 
     fn complementCarryFlag(self: *CPU) u8 {
-        var flags = self.getFlags();
-        flags.subtract = false;
-        flags.half_carry = false;
-        flags.carry = !flags.carry;
-        self.registers.flags = flags.toInt();
+        self.registers.flags.subtract = false;
+        self.registers.flags.half_carry = false;
+        self.registers.flags.carry = !self.registers.flags.carry;
         return 4;
     }
 
@@ -2297,12 +2245,10 @@ pub const CPU = struct {
     fn shiftLeftArithmetic(self: *CPU, value: u8) u8 {
         const new_value = value << 1;
 
-        var flags = self.getFlags();
-        flags.zero = new_value == 0;
-        flags.subtract = false;
-        flags.half_carry = false;
-        flags.carry = value & 0b1000_0000 == 0b1000_0000;
-        self.registers.flags = flags.toInt();
+        self.registers.flags.zero = new_value == 0;
+        self.registers.flags.subtract = false;
+        self.registers.flags.half_carry = false;
+        self.registers.flags.carry = value & 0b1000_0000 == 0b1000_0000;
 
         return new_value;
     }
@@ -2352,12 +2298,10 @@ pub const CPU = struct {
         const most_significant_bit = value & 0b1000_0000;
         const new_value = most_significant_bit | (value >> 1);
 
-        const flags = self.getFlags();
-        flags.zero = new_value == 0;
-        flags.subtract = false;
-        flags.half_carry = false;
-        flags.carry = value & 0b1 == 0b1;
-        self.registers.flags = flags.toInt();
+        self.registers.flags.zero = new_value == 0;
+        self.registers.flags.subtract = false;
+        self.registers.flags.half_carry = false;
+        self.registers.flags.carry = value & 0b1 == 0b1;
 
         return new_value;
     }
@@ -2406,12 +2350,10 @@ pub const CPU = struct {
     fn swapNibbles(self: *CPU, value: u8) u8 {
         const new_value = ((value & 0b0000_1111) << 4) | ((value & 0b1111_0000) >> 4);
 
-        const flags = self.getFlags();
-        flags.zero = new_value == 0;
-        flags.subtract = false;
-        flags.half_carry = false;
-        flags.carry = false;
-        self.registers.flags = flags.toInt();
+        self.registers.flags.zero = new_value == 0;
+        self.registers.flags.subtract = false;
+        self.registers.flags.half_carry = false;
+        self.registers.flags.carry = false;
 
         return new_value;
     }
@@ -2460,12 +2402,10 @@ pub const CPU = struct {
     fn shiftRightLogical(self: *CPU, value: u8) u8 {
         const new_value = value >> 1;
 
-        const flags = self.getFlags();
-        flags.zero = new_value == 0;
-        flags.subtract = false;
-        flags.half_carry = false;
-        flags.carry = value & 0b1 == 0b1;
-        self.registers.flags = flags.toInt();
+        self.registers.flags.zero = new_value == 0;
+        self.registers.flags.subtract = false;
+        self.registers.flags.half_carry = false;
+        self.registers.flags.carry = value & 0b1 == 0b1;
 
         return new_value;
     }
@@ -2792,10 +2732,9 @@ pub const CPU = struct {
 
     fn testBit(self: *CPU, value: u8, bit_position: u8) void {
         const result = (value >> bit_position) & 0b1;
-        var flags = self.getFlags();
-        flags.zero = result == 0;
-        flags.subtract = false;
-        flags.half_carry = true;
+        self.registers.flags.zero = result == 0;
+        self.registers.flags.subtract = false;
+        self.registers.flags.half_carry = true;
     }
 
     fn resetBit0BRegister(self: *CPU) u8 {

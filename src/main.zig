@@ -14,6 +14,18 @@ pub fn main() !void {
     // const result = 0b1111_1111 & inverse_bool;
     // const herp = setBit(0b0000_0000, 2);
     //const derp = resetBit(0b1111_1111, 2);
+    //
+    cpu.registers.flags.zero = true;
+    cpu.registers.flags.carry = true;
 
-    std.debug.print("{b}\n", .{cpu.registers.getBC()});
+    //var flags = PackedFlagsRegister{ .zero = true, .subtract = false, .half_carry = true, .carry = true };
+    // var flags2 = PackedFlagsRegister{};
+    // flags2.fromInt(0b1010_0000);
+    //const flagsInt: u8 = @bitCast(flags);
+
+    std.debug.print("{b}\n", .{cpu.registers.getAF()});
+
+    cpu.registers.setAF(0b11111111_01010000);
+
+    std.debug.print("{b}\n", .{cpu.registers.getAF()});
 }
