@@ -1313,17 +1313,12 @@ pub const CPU = struct {
     fn addToAccumulator(self: *CPU, value: u8, with_carry: bool) void {
         const carry = if (with_carry) @intFromBool(self.registers.flags.carry) else 0;
 
-        const add_with_did_overflow = @addWithOverflow(self.registers.accumulator, value);
-        const add = add_with_did_overflow[0];
-        const add_did_overflow = add_with_did_overflow[1];
-
-        const add_with_carry_with_did_overflow = @addWithOverflow(add, carry);
-        const add_with_carry = add_with_carry_with_did_overflow[0];
-        const add_with_carry_did_overflow = add_with_carry_with_did_overflow[1];
+        const add, const add_did_overflow = @addWithOverflow(self.registers.accumulator, value);
+        const add_with_carry, const add_with_carry_did_overflow = @addWithOverflow(add, carry);
 
         self.registers.flags.zero = add_with_carry == 0;
         self.registers.flags.subtract = false;
-        self.registers.flags.carry = add_did_overflow || add_with_carry_did_overflow;
+        self.registers.flags.carry = @bitCast(add_did_overflow | add_with_carry_did_overflow);
         self.registers.flags.half_carry = ((self.registers.accumulator & 0xF) + (value & 0xF) + carry) > 0xF;
 
         self.registers.accumulator = add_with_carry;
@@ -1422,17 +1417,12 @@ pub const CPU = struct {
     fn subToAccumulator(self: *CPU, value: u8, with_carry: bool) void {
         const carry = if (with_carry) @intFromBool(self.registers.flags.carry) else 0;
 
-        const sub_with_did_overflow = @subWithOverflow(self.registers.accumulator, value);
-        const sub = sub_with_did_overflow[0];
-        const sub_did_overflow = sub_with_did_overflow[1];
-
-        const sub_with_carry_with_did_overflow = @subWithOverflow(sub, carry);
-        const sub_with_carry = sub_with_carry_with_did_overflow[0];
-        const sub_with_carry_did_overflow = sub_with_carry_with_did_overflow[1];
+        const sub, const sub_did_overflow = @subWithOverflow(self.registers.accumulator, value);
+        const sub_with_carry, const sub_with_carry_did_overflow = @subWithOverflow(sub, carry);
 
         self.registers.flags.zero = sub_with_carry == 0;
         self.registers.flags.subtract = false;
-        self.registers.flags.carry = sub_did_overflow || sub_with_carry_did_overflow;
+        self.registers.flags.carry = @bitCast(sub_did_overflow | sub_with_carry_did_overflow);
         self.registers.flags.half_carry = (self.registers.accumulator & 0xF) < (value & 0xF) + carry;
 
         self.registers.accumulator = sub_with_carry;
@@ -1747,9 +1737,7 @@ pub const CPU = struct {
 
     fn addToHLRegister(self: *CPU, value: u16) void {
         const hl = self.registers.getHL();
-        const new_value_with_did_overflow: u16 = @addWithOverflow(hl, value);
-        const new_value = new_value_with_did_overflow[0];
-        const did_overflow = new_value_with_did_overflow[1];
+        const new_value, const did_overflow = @addWithOverflow(hl, value);
 
         self.registers.flags.subtract = false;
         self.registers.flags.carry = @bitCast(did_overflow);
@@ -1985,12 +1973,12 @@ pub const CPU = struct {
         if (!self.registers.flags.subtract) {
             var tempResult = value;
 
-            if (self.registers.flags.carry || value > 0x99) {
+            if (self.registers.flags.carry or (value > 0x99)) {
                 carry = true;
                 tempResult +%= 0x60;
             }
 
-            if (self.registers.flags.half_carry || value & 0x0F > 0x09) {
+            if (self.registers.flags.half_carry or (value & 0x0F > 0x09)) {
                 tempResult +%= 0x06;
             }
 

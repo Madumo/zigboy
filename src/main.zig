@@ -22,7 +22,7 @@ pub fn main() !void {
     // var flags2 = PackedFlagsRegister{};
     // flags2.fromInt(0b1010_0000);
     //const flagsInt: u8 = @bitCast(flags);
-
+    //
     std.debug.print("{b}\n", .{cpu.registers.getAF()});
 
     cpu.registers.setAF(0b11111111_01010000);
