@@ -53,11 +53,7 @@ pub const MemoryBus = struct {
             self.interrupt_request.lcdstat = true;
         }
 
-        const interrupts_byte = self.interrupt_request.toByte() & self.interrupt_enable.toByte();
-        var interrupts = InterruptFlags{};
-        interrupts.fromByte(interrupts_byte);
-
-        return interrupts;
+        return InterruptFlags.fromByte(self.interrupt_request.toByte() & self.interrupt_enable.toByte());
     }
 
     pub fn hasInterrupt(self: *MemoryBus) bool {
@@ -104,7 +100,7 @@ pub const MemoryBus = struct {
             addr.IO_REGISTERS_BEGIN...addr.IO_REGISTERS_END => {}, // TODO,
             addr.UNUSED_BEGIN...addr.UNUSED_END => {},
             addr.ZERO_PAGE_BEGIN...addr.ZERO_PAGE_END => self.zero_page[address - addr.ZERO_PAGE_BEGIN] = byte,
-            addr.INTERRUPT_ENABLE_REGISTER => self.interrupt_enable.fromByte(byte),
+            addr.INTERRUPT_ENABLE_REGISTER => self.interrupt_enable.putByte(byte),
             else => unreachable,
         }
     }

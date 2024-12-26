@@ -6,11 +6,15 @@ pub const InterruptFlags = packed struct {
     joypad: bool = false,
     _padding: u3 = 0,
 
+    pub fn fromByte(byte: u8) InterruptFlags {
+        return @bitCast(byte & 0b0001_1111);
+    }
+
     pub fn toByte(self: *InterruptFlags) u8 {
         return @bitCast(self.*);
     }
 
-    pub fn fromByte(self: *InterruptFlags, byte: u8) void {
+    pub fn putByte(self: *InterruptFlags, byte: u8) void {
         self.* = @bitCast(byte & 0b0001_1111);
     }
 

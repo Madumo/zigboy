@@ -6,11 +6,15 @@ pub const FlagsRegister = packed struct {
     subtract: bool = false,
     zero: bool = false,
 
+    pub fn fromByte(byte: u8) FlagsRegister {
+        return @bitCast(byte & 0b1111_0000);
+    }
+
     pub fn toByte(self: *FlagsRegister) u8 {
         return @bitCast(self.*);
     }
 
-    pub fn fromByte(self: *FlagsRegister, byte: u8) void {
+    pub fn putByte(self: *FlagsRegister, byte: u8) void {
         self.* = @bitCast(byte & 0b1111_0000);
     }
 };
@@ -37,7 +41,7 @@ pub const Registers = struct {
 
     pub fn setAF(self: *Registers, value: u16) void {
         self.accumulator = @as(u8, @intCast((value & 0xFF00) >> 8));
-        self.flags.fromByte(@intCast(value & 0xFF));
+        self.flags.putByte(@intCast(value & 0xFF));
     }
 
     pub fn getBC(self: *Registers) u16 {
