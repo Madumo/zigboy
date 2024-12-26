@@ -6,12 +6,12 @@ pub const FlagsRegister = packed struct {
     subtract: bool = false,
     zero: bool = false,
 
-    fn toByte(self: *FlagsRegister) u8 {
+    pub fn toByte(self: *FlagsRegister) u8 {
         return @bitCast(self.*);
     }
 
-    fn fromByte(self: *FlagsRegister, value: u8) void {
-        self.* = @bitCast(value & 0b1111_0000);
+    pub fn fromByte(self: *FlagsRegister, byte: u8) void {
+        self.* = @bitCast(byte & 0b1111_0000);
     }
 };
 

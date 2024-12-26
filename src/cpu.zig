@@ -4,6 +4,7 @@ const registers = @import("registers.zig");
 const Registers = registers.Registers;
 const FlagsRegister = registers.FlagsRegister;
 const MemoryBus = @import("memory_bus.zig").MemoryBus;
+const addr = @import("addressable_space.zig");
 
 pub const CPU = struct {
     registers: Registers = Registers{},
@@ -14,554 +15,550 @@ pub const CPU = struct {
     fn execute(self: *CPU, instruction: OpCode) u8 {
         self.incrementProgramCounter();
 
-        const cycles = switch (instruction) {
-            .unprefixed => |*unpreficed| {
-                switch (unpreficed.*) {
-                    .noop => self.noop(),
-                    .stop => self.stop(),
-                    .halt => self.halt(),
-                    .disableInterrupts => self.disableInterrupts(),
-                    .enableInterrupts => self.enableInterrupts(),
+        return switch (instruction) {
+            .unprefixed => |*unprefixed| switch (unprefixed.*) {
+                .noop => self.noop(),
+                .stop => self.stop(),
+                .halt => self.halt(),
+                .disableInterrupts => self.disableInterrupts(),
+                .enableInterrupts => self.enableInterrupts(),
 
-                    .loadToBCRegisterDataFromNextWord => self.loadToBCRegisterDataFromNextWord(),
-                    .loadToDERegisterDataFromNextWord => self.loadToDERegisterDataFromNextWord(),
-                    .loadToHLRegisterDataFromNextWord => self.loadToHLRegisterDataFromNextWord(),
-                    .loadToStackPointerRegisterDataFromNextWord => self.loadToStackPointerRegisterDataFromNextWord(),
-                    .loadIntoNextWordAddressDataFromStackPointerRegister => self.loadIntoNextWordAddressDataFromStackPointerRegister(),
+                .loadToBCRegisterDataFromNextWord => self.loadToBCRegisterDataFromNextWord(),
+                .loadToDERegisterDataFromNextWord => self.loadToDERegisterDataFromNextWord(),
+                .loadToHLRegisterDataFromNextWord => self.loadToHLRegisterDataFromNextWord(),
+                .loadToStackPointerRegisterDataFromNextWord => self.loadToStackPointerRegisterDataFromNextWord(),
+                .loadIntoNextWordAddressDataFromStackPointerRegister => self.loadIntoNextWordAddressDataFromStackPointerRegister(),
 
-                    .loadToBCRegisterAddressDataFromAccumulatorRegister => self.loadToBCRegisterAddressDataFromAccumulatorRegister(),
-                    .loadToDERegisterAddressDataFromAccumulatorRegister => self.loadToDERegisterAddressDataFromAccumulatorRegister(),
-                    .loadToHLRegisterAddressDataFromAccumulatorRegisterThenIncrement => self.loadToHLRegisterAddressDataFromAccumulatorRegisterThenIncrement(),
-                    .loadToHLRegisterAddressDataFromAccumulatorRegisterThenDecrement => self.loadToHLRegisterAddressDataFromAccumulatorRegisterThenDecrement(),
+                .loadToBCRegisterAddressDataFromAccumulatorRegister => self.loadToBCRegisterAddressDataFromAccumulatorRegister(),
+                .loadToDERegisterAddressDataFromAccumulatorRegister => self.loadToDERegisterAddressDataFromAccumulatorRegister(),
+                .loadToHLRegisterAddressDataFromAccumulatorRegisterThenIncrement => self.loadToHLRegisterAddressDataFromAccumulatorRegisterThenIncrement(),
+                .loadToHLRegisterAddressDataFromAccumulatorRegisterThenDecrement => self.loadToHLRegisterAddressDataFromAccumulatorRegisterThenDecrement(),
 
-                    .incrementBCRegister => self.incrementBCRegister(),
-                    .incrementDERegister => self.incrementDERegister(),
-                    .incrementHLRegister => self.incrementHLRegister(),
-                    .incrementStackPointerRegister => self.incrementStackPointerRegister(),
+                .incrementBCRegister => self.incrementBCRegister(),
+                .incrementDERegister => self.incrementDERegister(),
+                .incrementHLRegister => self.incrementHLRegister(),
+                .incrementStackPointerRegister => self.incrementStackPointerRegister(),
 
-                    .decrementBCRegister => self.decrementBCRegister(),
-                    .decrementDERegister => self.decrementDERegister(),
-                    .decrementHLRegister => self.decrementHLRegister(),
-                    .decrementStackPointerRegister => self.decrementStackPointerRegister(),
+                .decrementBCRegister => self.decrementBCRegister(),
+                .decrementDERegister => self.decrementDERegister(),
+                .decrementHLRegister => self.decrementHLRegister(),
+                .decrementStackPointerRegister => self.decrementStackPointerRegister(),
 
-                    .incrementBRegister => self.incrementBRegister(),
-                    .incrementCRegister => self.incrementCRegister(),
-                    .incrementDRegister => self.incrementDRegister(),
-                    .incrementERegister => self.incrementERegister(),
-                    .incrementHRegister => self.incrementHRegister(),
-                    .incrementLRegister => self.incrementLRegister(),
-                    .incrementHLRegisterAddress => self.incrementHLRegisterAddress(),
-                    .incrementAccumulatorRegister => self.incrementAccumulatorRegister(),
+                .incrementBRegister => self.incrementBRegister(),
+                .incrementCRegister => self.incrementCRegister(),
+                .incrementDRegister => self.incrementDRegister(),
+                .incrementERegister => self.incrementERegister(),
+                .incrementHRegister => self.incrementHRegister(),
+                .incrementLRegister => self.incrementLRegister(),
+                .incrementHLRegisterAddress => self.incrementHLRegisterAddress(),
+                .incrementAccumulatorRegister => self.incrementAccumulatorRegister(),
 
-                    .decrementBRegister => self.decrementBRegister(),
-                    .decrementCRegister => self.decrementCRegister(),
-                    .decrementDRegister => self.decrementDRegister(),
-                    .decrementERegister => self.decrementERegister(),
-                    .decrementHRegister => self.decrementHRegister(),
-                    .decrementLRegister => self.decrementLRegister(),
-                    .decrementHLRegisterAddress => self.decrementHLRegisterAddress(),
-                    .decrementAccumulatorRegister => self.decrementAccumulatorRegister(),
+                .decrementBRegister => self.decrementBRegister(),
+                .decrementCRegister => self.decrementCRegister(),
+                .decrementDRegister => self.decrementDRegister(),
+                .decrementERegister => self.decrementERegister(),
+                .decrementHRegister => self.decrementHRegister(),
+                .decrementLRegister => self.decrementLRegister(),
+                .decrementHLRegisterAddress => self.decrementHLRegisterAddress(),
+                .decrementAccumulatorRegister => self.decrementAccumulatorRegister(),
 
-                    .loadToBRegisterDataFromNextByte => self.loadToBRegisterDataFromNextByte(),
-                    .loadToCRegisterDataFromNextByte => self.loadToCRegisterDataFromNextByte(),
-                    .loadToDRegisterDataFromNextByte => self.loadToDRegisterDataFromNextByte(),
-                    .loadToERegisterDataFromNextByte => self.loadToERegisterDataFromNextByte(),
-                    .loadToHRegisterDataFromNextByte => self.loadToHRegisterDataFromNextByte(),
-                    .loadToLRegisterDataFromNextByte => self.loadToLRegisterDataFromNextByte(),
-                    .loadToHLRegisterAddressDataFromNextByte => self.loadToHLRegisterAddressDataFromNextByte(),
-                    .loadToAccumulatorRegisterDataFromNextByte => self.loadToAccumulatorRegisterDataFromNextByte(),
+                .loadToBRegisterDataFromNextByte => self.loadToBRegisterDataFromNextByte(),
+                .loadToCRegisterDataFromNextByte => self.loadToCRegisterDataFromNextByte(),
+                .loadToDRegisterDataFromNextByte => self.loadToDRegisterDataFromNextByte(),
+                .loadToERegisterDataFromNextByte => self.loadToERegisterDataFromNextByte(),
+                .loadToHRegisterDataFromNextByte => self.loadToHRegisterDataFromNextByte(),
+                .loadToLRegisterDataFromNextByte => self.loadToLRegisterDataFromNextByte(),
+                .loadToHLRegisterAddressDataFromNextByte => self.loadToHLRegisterAddressDataFromNextByte(),
+                .loadToAccumulatorRegisterDataFromNextByte => self.loadToAccumulatorRegisterDataFromNextByte(),
 
-                    .loadToBRegisterDataFromBRegister => self.loadToBRegisterDataFromBRegister(),
-                    .loadToBRegisterDataFromCRegister => self.loadToBRegisterDataFromCRegister(),
-                    .loadToBRegisterDataFromDRegister => self.loadToBRegisterDataFromDRegister(),
-                    .loadToBRegisterDataFromERegister => self.loadToBRegisterDataFromERegister(),
-                    .loadToBRegisterDataFromHRegister => self.loadToBRegisterDataFromHRegister(),
-                    .loadToBRegisterDataFromLRegister => self.loadToBRegisterDataFromLRegister(),
-                    .loadToBRegisterDataFromHLRegisterAddress => self.loadToBRegisterDataFromHLRegisterAddress(),
-                    .loadToBRegisterDataFromAccumulatorRegister => self.loadToBRegisterDataFromAccumulatorRegister(),
+                .loadToBRegisterDataFromBRegister => self.loadToBRegisterDataFromBRegister(),
+                .loadToBRegisterDataFromCRegister => self.loadToBRegisterDataFromCRegister(),
+                .loadToBRegisterDataFromDRegister => self.loadToBRegisterDataFromDRegister(),
+                .loadToBRegisterDataFromERegister => self.loadToBRegisterDataFromERegister(),
+                .loadToBRegisterDataFromHRegister => self.loadToBRegisterDataFromHRegister(),
+                .loadToBRegisterDataFromLRegister => self.loadToBRegisterDataFromLRegister(),
+                .loadToBRegisterDataFromHLRegisterAddress => self.loadToBRegisterDataFromHLRegisterAddress(),
+                .loadToBRegisterDataFromAccumulatorRegister => self.loadToBRegisterDataFromAccumulatorRegister(),
 
-                    .loadToCRegisterDataFromBRegister => self.loadToCRegisterDataFromBRegister(),
-                    .loadToCRegisterDataFromCRegister => self.loadToCRegisterDataFromCRegister(),
-                    .loadToCRegisterDataFromDRegister => self.loadToCRegisterDataFromDRegister(),
-                    .loadToCRegisterDataFromERegister => self.loadToCRegisterDataFromERegister(),
-                    .loadToCRegisterDataFromHRegister => self.loadToCRegisterDataFromHRegister(),
-                    .loadToCRegisterDataFromLRegister => self.loadToCRegisterDataFromLRegister(),
-                    .loadToCRegisterDataFromHLRegisterAddress => self.loadToCRegisterDataFromHLRegisterAddress(),
-                    .loadToCRegisterDataFromAccumulatorRegister => self.loadToCRegisterDataFromAccumulatorRegister(),
+                .loadToCRegisterDataFromBRegister => self.loadToCRegisterDataFromBRegister(),
+                .loadToCRegisterDataFromCRegister => self.loadToCRegisterDataFromCRegister(),
+                .loadToCRegisterDataFromDRegister => self.loadToCRegisterDataFromDRegister(),
+                .loadToCRegisterDataFromERegister => self.loadToCRegisterDataFromERegister(),
+                .loadToCRegisterDataFromHRegister => self.loadToCRegisterDataFromHRegister(),
+                .loadToCRegisterDataFromLRegister => self.loadToCRegisterDataFromLRegister(),
+                .loadToCRegisterDataFromHLRegisterAddress => self.loadToCRegisterDataFromHLRegisterAddress(),
+                .loadToCRegisterDataFromAccumulatorRegister => self.loadToCRegisterDataFromAccumulatorRegister(),
 
-                    .loadToDRegisterDataFromBRegister => self.loadToDRegisterDataFromBRegister(),
-                    .loadToDRegisterDataFromCRegister => self.loadToDRegisterDataFromCRegister(),
-                    .loadToDRegisterDataFromDRegister => self.loadToDRegisterDataFromDRegister(),
-                    .loadToDRegisterDataFromERegister => self.loadToDRegisterDataFromERegister(),
-                    .loadToDRegisterDataFromHRegister => self.loadToDRegisterDataFromHRegister(),
-                    .loadToDRegisterDataFromLRegister => self.loadToDRegisterDataFromLRegister(),
-                    .loadToDRegisterDataFromHLRegisterAddress => self.loadToDRegisterDataFromHLRegisterAddress(),
-                    .loadToDRegisterDataFromAccumulatorRegister => self.loadToDRegisterDataFromAccumulatorRegister(),
+                .loadToDRegisterDataFromBRegister => self.loadToDRegisterDataFromBRegister(),
+                .loadToDRegisterDataFromCRegister => self.loadToDRegisterDataFromCRegister(),
+                .loadToDRegisterDataFromDRegister => self.loadToDRegisterDataFromDRegister(),
+                .loadToDRegisterDataFromERegister => self.loadToDRegisterDataFromERegister(),
+                .loadToDRegisterDataFromHRegister => self.loadToDRegisterDataFromHRegister(),
+                .loadToDRegisterDataFromLRegister => self.loadToDRegisterDataFromLRegister(),
+                .loadToDRegisterDataFromHLRegisterAddress => self.loadToDRegisterDataFromHLRegisterAddress(),
+                .loadToDRegisterDataFromAccumulatorRegister => self.loadToDRegisterDataFromAccumulatorRegister(),
 
-                    .loadToERegisterDataFromBRegister => self.loadToERegisterDataFromBRegister(),
-                    .loadToERegisterDataFromCRegister => self.loadToERegisterDataFromCRegister(),
-                    .loadToERegisterDataFromDRegister => self.loadToERegisterDataFromDRegister(),
-                    .loadToERegisterDataFromERegister => self.loadToERegisterDataFromERegister(),
-                    .loadToERegisterDataFromHRegister => self.loadToERegisterDataFromHRegister(),
-                    .loadToERegisterDataFromLRegister => self.loadToERegisterDataFromLRegister(),
-                    .loadToERegisterDataFromHLRegisterAddress => self.loadToERegisterDataFromHLRegisterAddress(),
-                    .loadToERegisterDataFromAccumulatorRegister => self.loadToERegisterDataFromAccumulatorRegister(),
+                .loadToERegisterDataFromBRegister => self.loadToERegisterDataFromBRegister(),
+                .loadToERegisterDataFromCRegister => self.loadToERegisterDataFromCRegister(),
+                .loadToERegisterDataFromDRegister => self.loadToERegisterDataFromDRegister(),
+                .loadToERegisterDataFromERegister => self.loadToERegisterDataFromERegister(),
+                .loadToERegisterDataFromHRegister => self.loadToERegisterDataFromHRegister(),
+                .loadToERegisterDataFromLRegister => self.loadToERegisterDataFromLRegister(),
+                .loadToERegisterDataFromHLRegisterAddress => self.loadToERegisterDataFromHLRegisterAddress(),
+                .loadToERegisterDataFromAccumulatorRegister => self.loadToERegisterDataFromAccumulatorRegister(),
 
-                    .loadToHRegisterDataFromBRegister => self.loadToHRegisterDataFromBRegister(),
-                    .loadToHRegisterDataFromCRegister => self.loadToHRegisterDataFromCRegister(),
-                    .loadToHRegisterDataFromDRegister => self.loadToHRegisterDataFromDRegister(),
-                    .loadToHRegisterDataFromERegister => self.loadToHRegisterDataFromERegister(),
-                    .loadToHRegisterDataFromHRegister => self.loadToHRegisterDataFromHRegister(),
-                    .loadToHRegisterDataFromLRegister => self.loadToHRegisterDataFromLRegister(),
-                    .loadToHRegisterDataFromHLRegisterAddress => self.loadToHRegisterDataFromHLRegisterAddress(),
-                    .loadToHRegisterDataFromAccumulatorRegister => self.loadToHRegisterDataFromAccumulatorRegister(),
+                .loadToHRegisterDataFromBRegister => self.loadToHRegisterDataFromBRegister(),
+                .loadToHRegisterDataFromCRegister => self.loadToHRegisterDataFromCRegister(),
+                .loadToHRegisterDataFromDRegister => self.loadToHRegisterDataFromDRegister(),
+                .loadToHRegisterDataFromERegister => self.loadToHRegisterDataFromERegister(),
+                .loadToHRegisterDataFromHRegister => self.loadToHRegisterDataFromHRegister(),
+                .loadToHRegisterDataFromLRegister => self.loadToHRegisterDataFromLRegister(),
+                .loadToHRegisterDataFromHLRegisterAddress => self.loadToHRegisterDataFromHLRegisterAddress(),
+                .loadToHRegisterDataFromAccumulatorRegister => self.loadToHRegisterDataFromAccumulatorRegister(),
 
-                    .loadToLRegisterDataFromBRegister => self.loadToLRegisterDataFromBRegister(),
-                    .loadToLRegisterDataFromCRegister => self.loadToLRegisterDataFromCRegister(),
-                    .loadToLRegisterDataFromDRegister => self.loadToLRegisterDataFromDRegister(),
-                    .loadToLRegisterDataFromERegister => self.loadToLRegisterDataFromERegister(),
-                    .loadToLRegisterDataFromHRegister => self.loadToLRegisterDataFromHRegister(),
-                    .loadToLRegisterDataFromLRegister => self.loadToLRegisterDataFromLRegister(),
-                    .loadToLRegisterDataFromHLRegisterAddress => self.loadToLRegisterDataFromHLRegisterAddress(),
-                    .loadToLRegisterDataFromAccumulatorRegister => self.loadToLRegisterDataFromAccumulatorRegister(),
+                .loadToLRegisterDataFromBRegister => self.loadToLRegisterDataFromBRegister(),
+                .loadToLRegisterDataFromCRegister => self.loadToLRegisterDataFromCRegister(),
+                .loadToLRegisterDataFromDRegister => self.loadToLRegisterDataFromDRegister(),
+                .loadToLRegisterDataFromERegister => self.loadToLRegisterDataFromERegister(),
+                .loadToLRegisterDataFromHRegister => self.loadToLRegisterDataFromHRegister(),
+                .loadToLRegisterDataFromLRegister => self.loadToLRegisterDataFromLRegister(),
+                .loadToLRegisterDataFromHLRegisterAddress => self.loadToLRegisterDataFromHLRegisterAddress(),
+                .loadToLRegisterDataFromAccumulatorRegister => self.loadToLRegisterDataFromAccumulatorRegister(),
 
-                    .loadToHLRegisterAddressDataFromBRegister => self.loadToHLRegisterAddressDataFromBRegister(),
-                    .loadToHLRegisterAddressDataFromCRegister => self.loadToHLRegisterAddressDataFromCRegister(),
-                    .loadToHLRegisterAddressDataFromDRegister => self.loadToHLRegisterAddressDataFromDRegister(),
-                    .loadToHLRegisterAddressDataFromERegister => self.loadToHLRegisterAddressDataFromERegister(),
-                    .loadToHLRegisterAddressDataFromHRegister => self.loadToHLRegisterAddressDataFromHRegister(),
-                    .loadToHLRegisterAddressDataFromLRegister => self.loadToHLRegisterAddressDataFromLRegister(),
-                    .loadToHLRegisterAddressDataFromAccumulatorRegister => self.loadToHLRegisterAddressDataFromAccumulatorRegister(),
+                .loadToHLRegisterAddressDataFromBRegister => self.loadToHLRegisterAddressDataFromBRegister(),
+                .loadToHLRegisterAddressDataFromCRegister => self.loadToHLRegisterAddressDataFromCRegister(),
+                .loadToHLRegisterAddressDataFromDRegister => self.loadToHLRegisterAddressDataFromDRegister(),
+                .loadToHLRegisterAddressDataFromERegister => self.loadToHLRegisterAddressDataFromERegister(),
+                .loadToHLRegisterAddressDataFromHRegister => self.loadToHLRegisterAddressDataFromHRegister(),
+                .loadToHLRegisterAddressDataFromLRegister => self.loadToHLRegisterAddressDataFromLRegister(),
+                .loadToHLRegisterAddressDataFromAccumulatorRegister => self.loadToHLRegisterAddressDataFromAccumulatorRegister(),
 
-                    .loadToAccumulatorRegisterDataFromBRegister => self.loadToAccumulatorRegisterDataFromBRegister(),
-                    .loadToAccumulatorRegisterDataFromCRegister => self.loadToAccumulatorRegisterDataFromCRegister(),
-                    .loadToAccumulatorRegisterDataFromDRegister => self.loadToAccumulatorRegisterDataFromDRegister(),
-                    .loadToAccumulatorRegisterDataFromERegister => self.loadToAccumulatorRegisterDataFromERegister(),
-                    .loadToAccumulatorRegisterDataFromHRegister => self.loadToAccumulatorRegisterDataFromHRegister(),
-                    .loadToAccumulatorRegisterDataFromLRegister => self.loadToAccumulatorRegisterDataFromLRegister(),
-                    .loadToAccumulatorRegisterDataFromHLRegisterAddress => self.loadToAccumulatorRegisterDataFromHLRegisterAddress(),
-                    .loadToAccumulatorRegisterDataFromAccumulatorRegister => self.loadToAccumulatorRegisterDataFromAccumulatorRegister(),
+                .loadToAccumulatorRegisterDataFromBRegister => self.loadToAccumulatorRegisterDataFromBRegister(),
+                .loadToAccumulatorRegisterDataFromCRegister => self.loadToAccumulatorRegisterDataFromCRegister(),
+                .loadToAccumulatorRegisterDataFromDRegister => self.loadToAccumulatorRegisterDataFromDRegister(),
+                .loadToAccumulatorRegisterDataFromERegister => self.loadToAccumulatorRegisterDataFromERegister(),
+                .loadToAccumulatorRegisterDataFromHRegister => self.loadToAccumulatorRegisterDataFromHRegister(),
+                .loadToAccumulatorRegisterDataFromLRegister => self.loadToAccumulatorRegisterDataFromLRegister(),
+                .loadToAccumulatorRegisterDataFromHLRegisterAddress => self.loadToAccumulatorRegisterDataFromHLRegisterAddress(),
+                .loadToAccumulatorRegisterDataFromAccumulatorRegister => self.loadToAccumulatorRegisterDataFromAccumulatorRegister(),
 
-                    .addToAccumulatorRegisterDataFromBRegister => self.addToAccumulatorRegisterDataFromBRegister(),
-                    .addToAccumulatorRegisterDataFromCRegister => self.addToAccumulatorRegisterDataFromCRegister(),
-                    .addToAccumulatorRegisterDataFromDRegister => self.addToAccumulatorRegisterDataFromDRegister(),
-                    .addToAccumulatorRegisterDataFromERegister => self.addToAccumulatorRegisterDataFromERegister(),
-                    .addToAccumulatorRegisterDataFromHRegister => self.addToAccumulatorRegisterDataFromHRegister(),
-                    .addToAccumulatorRegisterDataFromLRegister => self.addToAccumulatorRegisterDataFromLRegister(),
-                    .addToAccumulatorRegisterDataFromHLRegisterAddress => self.addToAccumulatorRegisterDataFromHLRegisterAddress(),
-                    .addToAccumulatorRegisterDataFromAccumulatorRegister => self.addToAccumulatorRegisterDataFromAccumulatorRegister(),
-                    .addToAccumulatorRegisterDataFromNextByte => self.addToAccumulatorRegisterDataFromNextByte(),
+                .addToAccumulatorRegisterDataFromBRegister => self.addToAccumulatorRegisterDataFromBRegister(),
+                .addToAccumulatorRegisterDataFromCRegister => self.addToAccumulatorRegisterDataFromCRegister(),
+                .addToAccumulatorRegisterDataFromDRegister => self.addToAccumulatorRegisterDataFromDRegister(),
+                .addToAccumulatorRegisterDataFromERegister => self.addToAccumulatorRegisterDataFromERegister(),
+                .addToAccumulatorRegisterDataFromHRegister => self.addToAccumulatorRegisterDataFromHRegister(),
+                .addToAccumulatorRegisterDataFromLRegister => self.addToAccumulatorRegisterDataFromLRegister(),
+                .addToAccumulatorRegisterDataFromHLRegisterAddress => self.addToAccumulatorRegisterDataFromHLRegisterAddress(),
+                .addToAccumulatorRegisterDataFromAccumulatorRegister => self.addToAccumulatorRegisterDataFromAccumulatorRegister(),
+                .addToAccumulatorRegisterDataFromNextByte => self.addToAccumulatorRegisterDataFromNextByte(),
 
-                    .addWithCarryToAccumulatorRegisterDataFromBRegister => self.addWithCarryToAccumulatorRegisterDataFromBRegister(),
-                    .addWithCarryToAccumulatorRegisterDataFromCRegister => self.addWithCarryToAccumulatorRegisterDataFromCRegister(),
-                    .addWithCarryToAccumulatorRegisterDataFromDRegister => self.addWithCarryToAccumulatorRegisterDataFromDRegister(),
-                    .addWithCarryToAccumulatorRegisterDataFromERegister => self.addWithCarryToAccumulatorRegisterDataFromERegister(),
-                    .addWithCarryToAccumulatorRegisterDataFromHRegister => self.addWithCarryToAccumulatorRegisterDataFromHRegister(),
-                    .addWithCarryToAccumulatorRegisterDataFromLRegister => self.addWithCarryToAccumulatorRegisterDataFromLRegister(),
-                    .addWithCarryToAccumulatorRegisterDataFromHLRegisterAddress => self.addWithCarryToAccumulatorRegisterDataFromHLRegisterAddress(),
-                    .addWithCarryToAccumulatorRegisterDataFromAccumulatorRegister => self.addWithCarryToAccumulatorRegisterDataFromAccumulatorRegister(),
-                    .addWithCarryToAccumulatorRegisterDataFromNextByte => self.addWithCarryToAccumulatorRegisterDataFromNextByte(),
+                .addWithCarryToAccumulatorRegisterDataFromBRegister => self.addWithCarryToAccumulatorRegisterDataFromBRegister(),
+                .addWithCarryToAccumulatorRegisterDataFromCRegister => self.addWithCarryToAccumulatorRegisterDataFromCRegister(),
+                .addWithCarryToAccumulatorRegisterDataFromDRegister => self.addWithCarryToAccumulatorRegisterDataFromDRegister(),
+                .addWithCarryToAccumulatorRegisterDataFromERegister => self.addWithCarryToAccumulatorRegisterDataFromERegister(),
+                .addWithCarryToAccumulatorRegisterDataFromHRegister => self.addWithCarryToAccumulatorRegisterDataFromHRegister(),
+                .addWithCarryToAccumulatorRegisterDataFromLRegister => self.addWithCarryToAccumulatorRegisterDataFromLRegister(),
+                .addWithCarryToAccumulatorRegisterDataFromHLRegisterAddress => self.addWithCarryToAccumulatorRegisterDataFromHLRegisterAddress(),
+                .addWithCarryToAccumulatorRegisterDataFromAccumulatorRegister => self.addWithCarryToAccumulatorRegisterDataFromAccumulatorRegister(),
+                .addWithCarryToAccumulatorRegisterDataFromNextByte => self.addWithCarryToAccumulatorRegisterDataFromNextByte(),
 
-                    .subToAccumulatorRegisterDataFromBRegister => self.subToAccumulatorRegisterDataFromBRegister(),
-                    .subToAccumulatorRegisterDataFromCRegister => self.subToAccumulatorRegisterDataFromCRegister(),
-                    .subToAccumulatorRegisterDataFromDRegister => self.subToAccumulatorRegisterDataFromDRegister(),
-                    .subToAccumulatorRegisterDataFromERegister => self.subToAccumulatorRegisterDataFromERegister(),
-                    .subToAccumulatorRegisterDataFromHRegister => self.subToAccumulatorRegisterDataFromHRegister(),
-                    .subToAccumulatorRegisterDataFromLRegister => self.subToAccumulatorRegisterDataFromLRegister(),
-                    .subToAccumulatorRegisterDataFromHLRegisterAddress => self.subToAccumulatorRegisterDataFromHLRegisterAddress(),
-                    .subToAccumulatorRegisterDataFromAccumulatorRegister => self.subToAccumulatorRegisterDataFromAccumulatorRegister(),
-                    .subToAccumulatorRegisterDataFromNextByte => self.subToAccumulatorRegisterDataFromNextByte(),
+                .subToAccumulatorRegisterDataFromBRegister => self.subToAccumulatorRegisterDataFromBRegister(),
+                .subToAccumulatorRegisterDataFromCRegister => self.subToAccumulatorRegisterDataFromCRegister(),
+                .subToAccumulatorRegisterDataFromDRegister => self.subToAccumulatorRegisterDataFromDRegister(),
+                .subToAccumulatorRegisterDataFromERegister => self.subToAccumulatorRegisterDataFromERegister(),
+                .subToAccumulatorRegisterDataFromHRegister => self.subToAccumulatorRegisterDataFromHRegister(),
+                .subToAccumulatorRegisterDataFromLRegister => self.subToAccumulatorRegisterDataFromLRegister(),
+                .subToAccumulatorRegisterDataFromHLRegisterAddress => self.subToAccumulatorRegisterDataFromHLRegisterAddress(),
+                .subToAccumulatorRegisterDataFromAccumulatorRegister => self.subToAccumulatorRegisterDataFromAccumulatorRegister(),
+                .subToAccumulatorRegisterDataFromNextByte => self.subToAccumulatorRegisterDataFromNextByte(),
 
-                    .subWithCarryToAccumulatorRegisterDataFromBRegister => self.subWithCarryToAccumulatorRegisterDataFromBRegister(),
-                    .subWithCarryToAccumulatorRegisterDataFromCRegister => self.subWithCarryToAccumulatorRegisterDataFromCRegister(),
-                    .subWithCarryToAccumulatorRegisterDataFromDRegister => self.subWithCarryToAccumulatorRegisterDataFromDRegister(),
-                    .subWithCarryToAccumulatorRegisterDataFromERegister => self.subWithCarryToAccumulatorRegisterDataFromERegister(),
-                    .subWithCarryToAccumulatorRegisterDataFromHRegister => self.subWithCarryToAccumulatorRegisterDataFromHRegister(),
-                    .subWithCarryToAccumulatorRegisterDataFromLRegister => self.subWithCarryToAccumulatorRegisterDataFromLRegister(),
-                    .subWithCarryToAccumulatorRegisterDataFromHLRegisterAddress => self.subWithCarryToAccumulatorRegisterDataFromHLRegisterAddress(),
-                    .subWithCarryToAccumulatorRegisterDataFromAccumulatorRegister => self.subWithCarryToAccumulatorRegisterDataFromAccumulatorRegister(),
-                    .subWithCarryToAccumulatorRegisterDataFromNextByte => self.subWithCarryToAccumulatorRegisterDataFromNextByte(),
+                .subWithCarryToAccumulatorRegisterDataFromBRegister => self.subWithCarryToAccumulatorRegisterDataFromBRegister(),
+                .subWithCarryToAccumulatorRegisterDataFromCRegister => self.subWithCarryToAccumulatorRegisterDataFromCRegister(),
+                .subWithCarryToAccumulatorRegisterDataFromDRegister => self.subWithCarryToAccumulatorRegisterDataFromDRegister(),
+                .subWithCarryToAccumulatorRegisterDataFromERegister => self.subWithCarryToAccumulatorRegisterDataFromERegister(),
+                .subWithCarryToAccumulatorRegisterDataFromHRegister => self.subWithCarryToAccumulatorRegisterDataFromHRegister(),
+                .subWithCarryToAccumulatorRegisterDataFromLRegister => self.subWithCarryToAccumulatorRegisterDataFromLRegister(),
+                .subWithCarryToAccumulatorRegisterDataFromHLRegisterAddress => self.subWithCarryToAccumulatorRegisterDataFromHLRegisterAddress(),
+                .subWithCarryToAccumulatorRegisterDataFromAccumulatorRegister => self.subWithCarryToAccumulatorRegisterDataFromAccumulatorRegister(),
+                .subWithCarryToAccumulatorRegisterDataFromNextByte => self.subWithCarryToAccumulatorRegisterDataFromNextByte(),
 
-                    .andToAccumulatorFromBRegister => self.andToAccumulatorFromBRegister(),
-                    .andToAccumulatorFromCRegister => self.andToAccumulatorFromCRegister(),
-                    .andToAccumulatorFromDRegister => self.andToAccumulatorFromDRegister(),
-                    .andToAccumulatorFromERegister => self.andToAccumulatorFromERegister(),
-                    .andToAccumulatorFromHRegister => self.andToAccumulatorFromHRegister(),
-                    .andToAccumulatorFromLRegister => self.andToAccumulatorFromLRegister(),
-                    .andToAccumulatorFromHLRegisterAddress => self.andToAccumulatorFromHLRegisterAddress(),
-                    .andToAccumulatorFromAccumulatorRegister => self.andToAccumulatorFromAccumulatorRegister(),
-                    .andToAccumulatorFromNextByte => self.andToAccumulatorRegisterDataFromNextByte(),
+                .andToAccumulatorFromBRegister => self.andToAccumulatorFromBRegister(),
+                .andToAccumulatorFromCRegister => self.andToAccumulatorFromCRegister(),
+                .andToAccumulatorFromDRegister => self.andToAccumulatorFromDRegister(),
+                .andToAccumulatorFromERegister => self.andToAccumulatorFromERegister(),
+                .andToAccumulatorFromHRegister => self.andToAccumulatorFromHRegister(),
+                .andToAccumulatorFromLRegister => self.andToAccumulatorFromLRegister(),
+                .andToAccumulatorFromHLRegisterAddress => self.andToAccumulatorFromHLRegisterAddress(),
+                .andToAccumulatorFromAccumulatorRegister => self.andToAccumulatorFromAccumulatorRegister(),
+                .andToAccumulatorFromNextByte => self.andToAccumulatorRegisterDataFromNextByte(),
 
-                    .xorToAccumulatorFromBRegister => self.xorToAccumulatorFromBRegister(),
-                    .xorToAccumulatorFromCRegister => self.xorToAccumulatorFromCRegister(),
-                    .xorToAccumulatorFromDRegister => self.xorToAccumulatorFromDRegister(),
-                    .xorToAccumulatorFromERegister => self.xorToAccumulatorFromERegister(),
-                    .xorToAccumulatorFromHRegister => self.xorToAccumulatorFromHRegister(),
-                    .xorToAccumulatorFromLRegister => self.xorToAccumulatorFromLRegister(),
-                    .xorToAccumulatorFromHLRegisterAddress => self.xorToAccumulatorFromHLRegisterAddress(),
-                    .xorToAccumulatorFromAccumulatorRegister => self.xorToAccumulatorFromAccumulatorRegister(),
-                    .xorToAccumulatorFromNextByte => self.xorToAccumulatorRegisterDataFromNextByte(),
+                .xorToAccumulatorFromBRegister => self.xorToAccumulatorFromBRegister(),
+                .xorToAccumulatorFromCRegister => self.xorToAccumulatorFromCRegister(),
+                .xorToAccumulatorFromDRegister => self.xorToAccumulatorFromDRegister(),
+                .xorToAccumulatorFromERegister => self.xorToAccumulatorFromERegister(),
+                .xorToAccumulatorFromHRegister => self.xorToAccumulatorFromHRegister(),
+                .xorToAccumulatorFromLRegister => self.xorToAccumulatorFromLRegister(),
+                .xorToAccumulatorFromHLRegisterAddress => self.xorToAccumulatorFromHLRegisterAddress(),
+                .xorToAccumulatorFromAccumulatorRegister => self.xorToAccumulatorFromAccumulatorRegister(),
+                .xorToAccumulatorFromNextByte => self.xorToAccumulatorRegisterDataFromNextByte(),
 
-                    .orToAccumulatorFromBRegister => self.orToAccumulatorFromBRegister(),
-                    .orToAccumulatorFromCRegister => self.orToAccumulatorFromCRegister(),
-                    .orToAccumulatorFromDRegister => self.orToAccumulatorFromDRegister(),
-                    .orToAccumulatorFromERegister => self.orToAccumulatorFromERegister(),
-                    .orToAccumulatorFromHRegister => self.orToAccumulatorFromHRegister(),
-                    .orToAccumulatorFromLRegister => self.orToAccumulatorFromLRegister(),
-                    .orToAccumulatorFromHLRegisterAddress => self.orToAccumulatorFromHLRegisterAddress(),
-                    .orToAccumulatorFromAccumulatorRegister => self.orToAccumulatorFromAccumulatorRegister(),
-                    .orToAccumulatorFromNextByte => self.orToAccumulatorRegisterDataFromNextByte(),
+                .orToAccumulatorFromBRegister => self.orToAccumulatorFromBRegister(),
+                .orToAccumulatorFromCRegister => self.orToAccumulatorFromCRegister(),
+                .orToAccumulatorFromDRegister => self.orToAccumulatorFromDRegister(),
+                .orToAccumulatorFromERegister => self.orToAccumulatorFromERegister(),
+                .orToAccumulatorFromHRegister => self.orToAccumulatorFromHRegister(),
+                .orToAccumulatorFromLRegister => self.orToAccumulatorFromLRegister(),
+                .orToAccumulatorFromHLRegisterAddress => self.orToAccumulatorFromHLRegisterAddress(),
+                .orToAccumulatorFromAccumulatorRegister => self.orToAccumulatorFromAccumulatorRegister(),
+                .orToAccumulatorFromNextByte => self.orToAccumulatorRegisterDataFromNextByte(),
 
-                    .compareToAccumulatorFromBRegister => self.compareToAccumulatorFromBRegister(),
-                    .compareToAccumulatorFromCRegister => self.compareToAccumulatorFromCRegister(),
-                    .compareToAccumulatorFromDRegister => self.compareToAccumulatorFromDRegister(),
-                    .compareToAccumulatorFromERegister => self.compareToAccumulatorFromERegister(),
-                    .compareToAccumulatorFromHRegister => self.compareToAccumulatorFromHRegister(),
-                    .compareToAccumulatorFromLRegister => self.compareToAccumulatorFromLRegister(),
-                    .compareToAccumulatorFromHLRegisterAddress => self.compareToAccumulatorFromHLRegisterAddress(),
-                    .compareToAccumulatorFromAccumulatorRegister => self.compareToAccumulatorFromAccumulatorRegister(),
-                    .compareToAccumulatorFromNextByte => self.compareToAccumulatorRegisterDataFromNextByte(),
+                .compareToAccumulatorFromBRegister => self.compareToAccumulatorFromBRegister(),
+                .compareToAccumulatorFromCRegister => self.compareToAccumulatorFromCRegister(),
+                .compareToAccumulatorFromDRegister => self.compareToAccumulatorFromDRegister(),
+                .compareToAccumulatorFromERegister => self.compareToAccumulatorFromERegister(),
+                .compareToAccumulatorFromHRegister => self.compareToAccumulatorFromHRegister(),
+                .compareToAccumulatorFromLRegister => self.compareToAccumulatorFromLRegister(),
+                .compareToAccumulatorFromHLRegisterAddress => self.compareToAccumulatorFromHLRegisterAddress(),
+                .compareToAccumulatorFromAccumulatorRegister => self.compareToAccumulatorFromAccumulatorRegister(),
+                .compareToAccumulatorFromNextByte => self.compareToAccumulatorRegisterDataFromNextByte(),
 
-                    .rotateLeftAccumulatorRegister => self.rotateLeftAccumulatorRegister(),
-                    .rotateLeftThroughCarryAccumulatorRegister => self.rotateLeftThroughCarryAccumulatorRegister(),
-                    .rotateRightAccumulatorRegister => self.rotateRightAccumulatorRegister(),
-                    .rotateRightThroughCarryAccumulatorRegister => self.rotateRightThroughCarryAccumulatorRegister(),
+                .rotateLeftAccumulatorRegister => self.rotateLeftAccumulatorRegister(),
+                .rotateLeftThroughCarryAccumulatorRegister => self.rotateLeftThroughCarryAccumulatorRegister(),
+                .rotateRightAccumulatorRegister => self.rotateRightAccumulatorRegister(),
+                .rotateRightThroughCarryAccumulatorRegister => self.rotateRightThroughCarryAccumulatorRegister(),
 
-                    .addToHLRegisterDataFromBCRegister => self.addToHLRegisterDataFromBCRegister(),
-                    .addToHLRegisterDataFromDERegister => self.addToHLRegisterDataFromDERegister(),
-                    .addToHLRegisterDataFromHLRegister => self.addToHLRegisterDataFromHLRegister(),
-                    .addToHLRegisterDataFromStackPointerRegister => self.addToHLRegisterDataFromStackPointerRegister(),
+                .addToHLRegisterDataFromBCRegister => self.addToHLRegisterDataFromBCRegister(),
+                .addToHLRegisterDataFromDERegister => self.addToHLRegisterDataFromDERegister(),
+                .addToHLRegisterDataFromHLRegister => self.addToHLRegisterDataFromHLRegister(),
+                .addToHLRegisterDataFromStackPointerRegister => self.addToHLRegisterDataFromStackPointerRegister(),
 
-                    .jumpRelativeAlways => self.jumpRelativeAlways(),
-                    .jumpRelativeIfNotZero => self.jumpRelativeIfNotZero(),
-                    .jumpRelativeIfNotCarry => self.jumpRelativeIfNotCarry(),
-                    .jumpRelativeIfZero => self.jumpRelativeIfZero(),
-                    .jumpRelativeIfCarry => self.jumpRelativeIfCarry(),
+                .jumpRelativeAlways => self.jumpRelativeAlways(),
+                .jumpRelativeIfNotZero => self.jumpRelativeIfNotZero(),
+                .jumpRelativeIfNotCarry => self.jumpRelativeIfNotCarry(),
+                .jumpRelativeIfZero => self.jumpRelativeIfZero(),
+                .jumpRelativeIfCarry => self.jumpRelativeIfCarry(),
 
-                    .loadToByteAddressFromAccumulatorRegister => self.loadToByteAddressFromAccumulatorRegister(),
-                    .loadToAccumulatorRegisterFromByteAddress => self.loadToAccumulatorRegisterFromByteAddress(),
+                .loadToByteAddressFromAccumulatorRegister => self.loadToByteAddressFromAccumulatorRegister(),
+                .loadToAccumulatorRegisterFromByteAddress => self.loadToAccumulatorRegisterFromByteAddress(),
 
-                    .loadToAddressPlusCRegisterFromAccumulatorRegister => self.loadToAddressPlusCRegisterFromAccumulatorRegister(),
-                    .loadToAccumulatorRegisterFromAddressPlusCRegister => self.loadToAccumulatorRegisterFromAddressPlusCRegister(),
+                .loadToAddressPlusCRegisterFromAccumulatorRegister => self.loadToAddressPlusCRegisterFromAccumulatorRegister(),
+                .loadToAccumulatorRegisterFromAddressPlusCRegister => self.loadToAccumulatorRegisterFromAddressPlusCRegister(),
 
-                    .loadToNextWordAddressFromAccumulatorRegister => self.loadToNextWordAddressFromAccumulatorRegister(),
-                    .loadToAccumulatorRegisterFromNextWordAddress => self.loadToAccumulatorRegisterFromNextWordAddress(),
+                .loadToNextWordAddressFromAccumulatorRegister => self.loadToNextWordAddressFromAccumulatorRegister(),
+                .loadToAccumulatorRegisterFromNextWordAddress => self.loadToAccumulatorRegisterFromNextWordAddress(),
 
-                    .loadToStackPointerDataFromHLRegister => self.loadToStackPointerDataFromHLRegister(),
+                .loadToStackPointerDataFromHLRegister => self.loadToStackPointerDataFromHLRegister(),
 
-                    .returnIfNotZero => self.returnIfNotZero(),
-                    .returnIfNotCarry => self.returnIfNotCarry(),
-                    .returnIfZero => self.returnIfZero(),
-                    .returnIfCarry => self.returnIfCarry(),
-                    .returnAlways => self.returnAlways(),
-                    .returnAlwaysWithInterrupt => self.returnAlwaysWithInterrupt(),
+                .returnIfNotZero => self.returnIfNotZero(),
+                .returnIfNotCarry => self.returnIfNotCarry(),
+                .returnIfZero => self.returnIfZero(),
+                .returnIfCarry => self.returnIfCarry(),
+                .returnAlways => self.returnAlways(),
+                .returnAlwaysWithInterrupt => self.returnAlwaysWithInterrupt(),
 
-                    .jumpIfNotZero => self.jumpIfNotZero(),
-                    .jumpIfNotCarry => self.jumpIfNotCarry(),
-                    .jumpIfZero => self.jumpIfZero(),
-                    .jumpIfCarry => self.jumpIfCarry(),
-                    .jumpAlways => self.jumpAlways(),
+                .jumpIfNotZero => self.jumpIfNotZero(),
+                .jumpIfNotCarry => self.jumpIfNotCarry(),
+                .jumpIfZero => self.jumpIfZero(),
+                .jumpIfCarry => self.jumpIfCarry(),
+                .jumpAlways => self.jumpAlways(),
 
-                    .callIfNotZero => self.callIfNotZero(),
-                    .callIfNotCarry => self.callIfNotCarry(),
-                    .callIfZero => self.callIfZero(),
-                    .callIfCarry => self.callIfCarry(),
-                    .callAlways => self.callAlways(),
+                .callIfNotZero => self.callIfNotZero(),
+                .callIfNotCarry => self.callIfNotCarry(),
+                .callIfZero => self.callIfZero(),
+                .callIfCarry => self.callIfCarry(),
+                .callAlways => self.callAlways(),
 
-                    .popBCRegister => self.popBCRegister(),
-                    .popDERegister => self.popDERegister(),
-                    .popHLRegister => self.popHLRegister(),
-                    .popAFRegister => self.popAFRegister(),
+                .popBCRegister => self.popBCRegister(),
+                .popDERegister => self.popDERegister(),
+                .popHLRegister => self.popHLRegister(),
+                .popAFRegister => self.popAFRegister(),
 
-                    .pushBCRegister => self.pushBCRegister(),
-                    .pushDERegister => self.pushDERegister(),
-                    .pushHLRegister => self.pushHLRegister(),
-                    .pushAFRegister => self.pushAFRegister(),
+                .pushBCRegister => self.pushBCRegister(),
+                .pushDERegister => self.pushDERegister(),
+                .pushHLRegister => self.pushHLRegister(),
+                .pushAFRegister => self.pushAFRegister(),
 
-                    .restartX00 => self.restartX00(),
-                    .restartX10 => self.restartX10(),
-                    .restartX20 => self.restartX20(),
-                    .restartX30 => self.restartX30(),
-                    .restartX08 => self.restartX08(),
-                    .restartX18 => self.restartX18(),
-                    .restartX28 => self.restartX28(),
-                    .restartX38 => self.restartX38(),
+                .restartX00 => self.restartX00(),
+                .restartX10 => self.restartX10(),
+                .restartX20 => self.restartX20(),
+                .restartX30 => self.restartX30(),
+                .restartX08 => self.restartX08(),
+                .restartX18 => self.restartX18(),
+                .restartX28 => self.restartX28(),
+                .restartX38 => self.restartX38(),
 
-                    .jumpToAddressFromHL => self.jumpToAddressFromHL(),
+                .jumpToAddressFromHL => self.jumpToAddressFromHL(),
 
-                    .decimalAdjustAccumulator => self.decimalAdjustAccumulator(),
-                    .setCarryFlag => self.setCarryFlag(),
+                .decimalAdjustAccumulator => self.decimalAdjustAccumulator(),
+                .setCarryFlag => self.setCarryFlag(),
 
-                    .complementAccumulatorRegister => self.complementAccumulatorRegister(),
-                    .complementCarryFlag => self.complementCarryFlag(),
-                }
+                .complementAccumulatorRegister => self.complementAccumulatorRegister(),
+                .complementCarryFlag => self.complementCarryFlag(),
             },
-            .prefixed => |*prefixed| {
-                switch (prefixed.*) {
-                    .rotateLeftBRegister => self.rotateLeftBRegister(),
-                    .rotateLeftCRegister => self.rotateLeftCRegister(),
-                    .rotateLeftDRegister => self.rotateLeftDRegister(),
-                    .rotateLeftERegister => self.rotateLeftERegister(),
-                    .rotateLeftHRegister => self.rotateLeftHRegister(),
-                    .rotateLeftLRegister => self.rotateLeftLRegister(),
-                    .rotateLeftHLRegisterAddress => self.rotateLeftHLRegisterAddress(),
-                    .rotateLeftAccumulatorRegister => self.rotateLeftAccumulatorRegisterPrefixed(),
-                    .rotateLeftThroughCarryBRegister => self.rotateLeftThroughCarryBRegister(),
-                    .rotateLeftThroughCarryCRegister => self.rotateLeftThroughCarryCRegister(),
-                    .rotateLeftThroughCarryDRegister => self.rotateLeftThroughCarryDRegister(),
-                    .rotateLeftThroughCarryERegister => self.rotateLeftThroughCarryERegister(),
-                    .rotateLeftThroughCarryHRegister => self.rotateLeftThroughCarryHRegister(),
-                    .rotateLeftThroughCarryLRegister => self.rotateLeftThroughCarryLRegister(),
-                    .rotateLeftThroughCarryHLRegisterAddress => self.rotateLeftThroughCarryHLRegisterAddress(),
-                    .rotateLeftThroughCarryAccumulatorRegister => self.rotateLeftThroughCarryAccumulatorRegisterPrefixed(),
-                    .rotateRightBRegister => self.rotateRightBRegister(),
-                    .rotateRightCRegister => self.rotateRightCRegister(),
-                    .rotateRightDRegister => self.rotateRightDRegister(),
-                    .rotateRightERegister => self.rotateRightERegister(),
-                    .rotateRightHRegister => self.rotateRightHRegister(),
-                    .rotateRightLRegister => self.rotateRightLRegister(),
-                    .rotateRightHLRegisterAddress => self.rotateRightHLRegisterAddress(),
-                    .rotateRightAccumulatorRegister => self.rotateRightAccumulatorRegisterPrefixed(),
-                    .rotateRightThroughCarryBRegister => self.rotateRightThroughCarryBRegister(),
-                    .rotateRightThroughCarryCRegister => self.rotateRightThroughCarryCRegister(),
-                    .rotateRightThroughCarryDRegister => self.rotateRightThroughCarryDRegister(),
-                    .rotateRightThroughCarryERegister => self.rotateRightThroughCarryERegister(),
-                    .rotateRightThroughCarryHRegister => self.rotateRightThroughCarryHRegister(),
-                    .rotateRightThroughCarryLRegister => self.rotateRightThroughCarryLRegister(),
-                    .rotateRightThroughCarryHLRegisterAddress => self.rotateRightThroughCarryHLRegisterAddress(),
-                    .rotateRightThroughCarryAccumulatorRegister => self.rotateRightThroughCarryAccumulatorRegisterPrefixed(),
-                    .shiftLeftArithmeticBRegister => self.shiftLeftArithmeticBRegister(),
-                    .shiftLeftArithmeticCRegister => self.shiftLeftArithmeticCRegister(),
-                    .shiftLeftArithmeticDRegister => self.shiftLeftArithmeticDRegister(),
-                    .shiftLeftArithmeticERegister => self.shiftLeftArithmeticERegister(),
-                    .shiftLeftArithmeticHRegister => self.shiftLeftArithmeticHRegister(),
-                    .shiftLeftArithmeticLRegister => self.shiftLeftArithmeticLRegister(),
-                    .shiftLeftArithmeticHLRegisterAddress => self.shiftLeftArithmeticHLRegisterAddress(),
-                    .shiftLeftArithmeticAccumulatorRegister => self.shiftLeftArithmeticAccumulatorRegister(),
-                    .shiftRightArithmeticBRegister => self.shiftRightArithmeticBRegister(),
-                    .shiftRightArithmeticCRegister => self.shiftRightArithmeticCRegister(),
-                    .shiftRightArithmeticDRegister => self.shiftRightArithmeticDRegister(),
-                    .shiftRightArithmeticERegister => self.shiftRightArithmeticERegister(),
-                    .shiftRightArithmeticHRegister => self.shiftRightArithmeticHRegister(),
-                    .shiftRightArithmeticLRegister => self.shiftRightArithmeticLRegister(),
-                    .shiftRightArithmeticHLRegisterAddress => self.shiftRightArithmeticHLRegisterAddress(),
-                    .shiftRightArithmeticAccumulatorRegister => self.shiftRightArithmeticAccumulatorRegister(),
-                    .swapNibblesBRegister => self.swapNibblesBRegister(),
-                    .swapNibblesCRegister => self.swapNibblesCRegister(),
-                    .swapNibblesDRegister => self.swapNibblesDRegister(),
-                    .swapNibblesERegister => self.swapNibblesERegister(),
-                    .swapNibblesHRegister => self.swapNibblesHRegister(),
-                    .swapNibblesLRegister => self.swapNibblesLRegister(),
-                    .swapNibblesHLRegisterAddress => self.swapNibblesHLRegisterAddress(),
-                    .swapNibblesAccumulatorRegister => self.swapNibblesAccumulatorRegister(),
-                    .shiftRightLogicalBRegister => self.shiftRightLogicalBRegister(),
-                    .shiftRightLogicalCRegister => self.shiftRightLogicalCRegister(),
-                    .shiftRightLogicalDRegister => self.shiftRightLogicalDRegister(),
-                    .shiftRightLogicalERegister => self.shiftRightLogicalERegister(),
-                    .shiftRightLogicalHRegister => self.shiftRightLogicalHRegister(),
-                    .shiftRightLogicalLRegister => self.shiftRightLogicalLRegister(),
-                    .shiftRightLogicalHLRegisterAddress => self.shiftRightLogicalHLRegisterAddress(),
-                    .shiftRightLogicalAccumulatorRegister => self.shiftRightLogicalAccumulatorRegister(),
-                    .testBit0BRegister => self.testBit0BRegister(),
-                    .testBit0CRegister => self.testBit0CRegister(),
-                    .testBit0DRegister => self.testBit0DRegister(),
-                    .testBit0ERegister => self.testBit0ERegister(),
-                    .testBit0HRegister => self.testBit0HRegister(),
-                    .testBit0LRegister => self.testBit0LRegister(),
-                    .testBit0HLRegisterAddress => self.testBit0HLRegisterAddress(),
-                    .testBit0AccumulatorRegister => self.testBit0AccumulatorRegister(),
-                    .testBit1BRegister => self.testBit1BRegister(),
-                    .testBit1CRegister => self.testBit1CRegister(),
-                    .testBit1DRegister => self.testBit1DRegister(),
-                    .testBit1ERegister => self.testBit1ERegister(),
-                    .testBit1HRegister => self.testBit1HRegister(),
-                    .testBit1LRegister => self.testBit1LRegister(),
-                    .testBit1HLRegisterAddress => self.testBit1HLRegisterAddress(),
-                    .testBit1AccumulatorRegister => self.testBit1AccumulatorRegister(),
-                    .testBit2BRegister => self.testBit2BRegister(),
-                    .testBit2CRegister => self.testBit2CRegister(),
-                    .testBit2DRegister => self.testBit2DRegister(),
-                    .testBit2ERegister => self.testBit2ERegister(),
-                    .testBit2HRegister => self.testBit2HRegister(),
-                    .testBit2LRegister => self.testBit2LRegister(),
-                    .testBit2HLRegisterAddress => self.testBit2HLRegisterAddress(),
-                    .testBit2AccumulatorRegister => self.testBit2AccumulatorRegister(),
-                    .testBit3BRegister => self.testBit3BRegister(),
-                    .testBit3CRegister => self.testBit3CRegister(),
-                    .testBit3DRegister => self.testBit3DRegister(),
-                    .testBit3ERegister => self.testBit3ERegister(),
-                    .testBit3HRegister => self.testBit3HRegister(),
-                    .testBit3LRegister => self.testBit3LRegister(),
-                    .testBit3HLRegisterAddress => self.testBit3HLRegisterAddress(),
-                    .testBit3AccumulatorRegister => self.testBit3AccumulatorRegister(),
-                    .testBit4BRegister => self.testBit4BRegister(),
-                    .testBit4CRegister => self.testBit4CRegister(),
-                    .testBit4DRegister => self.testBit4DRegister(),
-                    .testBit4ERegister => self.testBit4ERegister(),
-                    .testBit4HRegister => self.testBit4HRegister(),
-                    .testBit4LRegister => self.testBit4LRegister(),
-                    .testBit4HLRegisterAddress => self.testBit4HLRegisterAddress(),
-                    .testBit4AccumulatorRegister => self.testBit4AccumulatorRegister(),
-                    .testBit5BRegister => self.testBit5BRegister(),
-                    .testBit5CRegister => self.testBit5CRegister(),
-                    .testBit5DRegister => self.testBit5DRegister(),
-                    .testBit5ERegister => self.testBit5ERegister(),
-                    .testBit5HRegister => self.testBit5HRegister(),
-                    .testBit5LRegister => self.testBit5LRegister(),
-                    .testBit5HLRegisterAddress => self.testBit5HLRegisterAddress(),
-                    .testBit5AccumulatorRegister => self.testBit5AccumulatorRegister(),
-                    .testBit6BRegister => self.testBit6BRegister(),
-                    .testBit6CRegister => self.testBit6CRegister(),
-                    .testBit6DRegister => self.testBit6DRegister(),
-                    .testBit6ERegister => self.testBit6ERegister(),
-                    .testBit6HRegister => self.testBit6HRegister(),
-                    .testBit6LRegister => self.testBit6LRegister(),
-                    .testBit6HLRegisterAddress => self.testBit6HLRegisterAddress(),
-                    .testBit6AccumulatorRegister => self.testBit6AccumulatorRegister(),
-                    .testBit7BRegister => self.testBit7BRegister(),
-                    .testBit7CRegister => self.testBit7CRegister(),
-                    .testBit7DRegister => self.testBit7DRegister(),
-                    .testBit7ERegister => self.testBit7ERegister(),
-                    .testBit7HRegister => self.testBit7HRegister(),
-                    .testBit7LRegister => self.testBit7LRegister(),
-                    .testBit7HLRegisterAddress => self.testBit7HLRegisterAddress(),
-                    .testBit7AccumulatorRegister => self.testBit7AccumulatorRegister(),
-                    .resetBit0BRegister => self.resetBit0BRegister(),
-                    .resetBit0CRegister => self.resetBit0CRegister(),
-                    .resetBit0DRegister => self.resetBit0DRegister(),
-                    .resetBit0ERegister => self.resetBit0ERegister(),
-                    .resetBit0HRegister => self.resetBit0HRegister(),
-                    .resetBit0LRegister => self.resetBit0LRegister(),
-                    .resetBit0HLRegisterAddress => self.resetBit0HLRegisterAddress(),
-                    .resetBit0AccumulatorRegister => self.resetBit0AccumulatorRegister(),
-                    .resetBit1BRegister => self.resetBit1BRegister(),
-                    .resetBit1CRegister => self.resetBit1CRegister(),
-                    .resetBit1DRegister => self.resetBit1DRegister(),
-                    .resetBit1ERegister => self.resetBit1ERegister(),
-                    .resetBit1HRegister => self.resetBit1HRegister(),
-                    .resetBit1LRegister => self.resetBit1LRegister(),
-                    .resetBit1HLRegisterAddress => self.resetBit1HLRegisterAddress(),
-                    .resetBit1AccumulatorRegister => self.resetBit1AccumulatorRegister(),
-                    .resetBit2BRegister => self.resetBit2BRegister(),
-                    .resetBit2CRegister => self.resetBit2CRegister(),
-                    .resetBit2DRegister => self.resetBit2DRegister(),
-                    .resetBit2ERegister => self.resetBit2ERegister(),
-                    .resetBit2HRegister => self.resetBit2HRegister(),
-                    .resetBit2LRegister => self.resetBit2LRegister(),
-                    .resetBit2HLRegisterAddress => self.resetBit2HLRegisterAddress(),
-                    .resetBit2AccumulatorRegister => self.resetBit2AccumulatorRegister(),
-                    .resetBit3BRegister => self.resetBit3BRegister(),
-                    .resetBit3CRegister => self.resetBit3CRegister(),
-                    .resetBit3DRegister => self.resetBit3DRegister(),
-                    .resetBit3ERegister => self.resetBit3ERegister(),
-                    .resetBit3HRegister => self.resetBit3HRegister(),
-                    .resetBit3LRegister => self.resetBit3LRegister(),
-                    .resetBit3HLRegisterAddress => self.resetBit3HLRegisterAddress(),
-                    .resetBit3AccumulatorRegister => self.resetBit3AccumulatorRegister(),
-                    .resetBit4BRegister => self.resetBit4BRegister(),
-                    .resetBit4CRegister => self.resetBit4CRegister(),
-                    .resetBit4DRegister => self.resetBit4DRegister(),
-                    .resetBit4ERegister => self.resetBit4ERegister(),
-                    .resetBit4HRegister => self.resetBit4HRegister(),
-                    .resetBit4LRegister => self.resetBit4LRegister(),
-                    .resetBit4HLRegisterAddress => self.resetBit4HLRegisterAddress(),
-                    .resetBit4AccumulatorRegister => self.resetBit4AccumulatorRegister(),
-                    .resetBit5BRegister => self.resetBit5BRegister(),
-                    .resetBit5CRegister => self.resetBit5CRegister(),
-                    .resetBit5DRegister => self.resetBit5DRegister(),
-                    .resetBit5ERegister => self.resetBit5ERegister(),
-                    .resetBit5HRegister => self.resetBit5HRegister(),
-                    .resetBit5LRegister => self.resetBit5LRegister(),
-                    .resetBit5HLRegisterAddress => self.resetBit5HLRegisterAddress(),
-                    .resetBit5AccumulatorRegister => self.resetBit5AccumulatorRegister(),
-                    .resetBit6BRegister => self.resetBit6BRegister(),
-                    .resetBit6CRegister => self.resetBit6CRegister(),
-                    .resetBit6DRegister => self.resetBit6DRegister(),
-                    .resetBit6ERegister => self.resetBit6ERegister(),
-                    .resetBit6HRegister => self.resetBit6HRegister(),
-                    .resetBit6LRegister => self.resetBit6LRegister(),
-                    .resetBit6HLRegisterAddress => self.resetBit6HLRegisterAddress(),
-                    .resetBit6AccumulatorRegister => self.resetBit6AccumulatorRegister(),
-                    .resetBit7BRegister => self.resetBit7BRegister(),
-                    .resetBit7CRegister => self.resetBit7CRegister(),
-                    .resetBit7DRegister => self.resetBit7DRegister(),
-                    .resetBit7ERegister => self.resetBit7ERegister(),
-                    .resetBit7HRegister => self.resetBit7HRegister(),
-                    .resetBit7LRegister => self.resetBit7LRegister(),
-                    .resetBit7HLRegisterAddress => self.resetBit7HLRegisterAddress(),
-                    .resetBit7AccumulatorRegister => self.resetBit7AccumulatorRegister(),
-                    .setBit0BRegister => self.setBit0BRegister(),
-                    .setBit0CRegister => self.setBit0CRegister(),
-                    .setBit0DRegister => self.setBit0DRegister(),
-                    .setBit0ERegister => self.setBit0ERegister(),
-                    .setBit0HRegister => self.setBit0HRegister(),
-                    .setBit0LRegister => self.setBit0LRegister(),
-                    .setBit0HLRegisterAddress => self.setBit0HLRegisterAddress(),
-                    .setBit0AccumulatorRegister => self.setBit0AccumulatorRegister(),
-                    .setBit1BRegister => self.setBit1BRegister(),
-                    .setBit1CRegister => self.setBit1CRegister(),
-                    .setBit1DRegister => self.setBit1DRegister(),
-                    .setBit1ERegister => self.setBit1ERegister(),
-                    .setBit1HRegister => self.setBit1HRegister(),
-                    .setBit1LRegister => self.setBit1LRegister(),
-                    .setBit1HLRegisterAddress => self.setBit1HLRegisterAddress(),
-                    .setBit1AccumulatorRegister => self.setBit1AccumulatorRegister(),
-                    .setBit2BRegister => self.setBit2BRegister(),
-                    .setBit2CRegister => self.setBit2CRegister(),
-                    .setBit2DRegister => self.setBit2DRegister(),
-                    .setBit2ERegister => self.setBit2ERegister(),
-                    .setBit2HRegister => self.setBit2HRegister(),
-                    .setBit2LRegister => self.setBit2LRegister(),
-                    .setBit2HLRegisterAddress => self.setBit2HLRegisterAddress(),
-                    .setBit2AccumulatorRegister => self.setBit2AccumulatorRegister(),
-                    .setBit3BRegister => self.setBit3BRegister(),
-                    .setBit3CRegister => self.setBit3CRegister(),
-                    .setBit3DRegister => self.setBit3DRegister(),
-                    .setBit3ERegister => self.setBit3ERegister(),
-                    .setBit3HRegister => self.setBit3HRegister(),
-                    .setBit3LRegister => self.setBit3LRegister(),
-                    .setBit3HLRegisterAddress => self.setBit3HLRegisterAddress(),
-                    .setBit3AccumulatorRegister => self.setBit3AccumulatorRegister(),
-                    .setBit4BRegister => self.setBit4BRegister(),
-                    .setBit4CRegister => self.setBit4CRegister(),
-                    .setBit4DRegister => self.setBit4DRegister(),
-                    .setBit4ERegister => self.setBit4ERegister(),
-                    .setBit4HRegister => self.setBit4HRegister(),
-                    .setBit4LRegister => self.setBit4LRegister(),
-                    .setBit4HLRegisterAddress => self.setBit4HLRegisterAddress(),
-                    .setBit4AccumulatorRegister => self.setBit4AccumulatorRegister(),
-                    .setBit5BRegister => self.setBit5BRegister(),
-                    .setBit5CRegister => self.setBit5CRegister(),
-                    .setBit5DRegister => self.setBit5DRegister(),
-                    .setBit5ERegister => self.setBit5ERegister(),
-                    .setBit5HRegister => self.setBit5HRegister(),
-                    .setBit5LRegister => self.setBit5LRegister(),
-                    .setBit5HLRegisterAddress => self.setBit5HLRegisterAddress(),
-                    .setBit5AccumulatorRegister => self.setBit5AccumulatorRegister(),
-                    .setBit6BRegister => self.setBit6BRegister(),
-                    .setBit6CRegister => self.setBit6CRegister(),
-                    .setBit6DRegister => self.setBit6DRegister(),
-                    .setBit6ERegister => self.setBit6ERegister(),
-                    .setBit6HRegister => self.setBit6HRegister(),
-                    .setBit6LRegister => self.setBit6LRegister(),
-                    .setBit6HLRegisterAddress => self.setBit6HLRegisterAddress(),
-                    .setBit6AccumulatorRegister => self.setBit6AccumulatorRegister(),
-                    .setBit7BRegister => self.setBit7BRegister(),
-                    .setBit7CRegister => self.setBit7CRegister(),
-                    .setBit7DRegister => self.setBit7DRegister(),
-                    .setBit7ERegister => self.setBit7ERegister(),
-                    .setBit7HRegister => self.setBit7HRegister(),
-                    .setBit7LRegister => self.setBit7LRegister(),
-                    .setBit7HLRegisterAddress => self.setBit7HLRegisterAddress(),
-                    .setBit7AccumulatorRegister => self.setBit7AccumulatorRegister(),
-                }
+            .prefixed => |*prefixed| switch (prefixed.*) {
+                .rotateLeftBRegister => self.rotateLeftBRegister(),
+                .rotateLeftCRegister => self.rotateLeftCRegister(),
+                .rotateLeftDRegister => self.rotateLeftDRegister(),
+                .rotateLeftERegister => self.rotateLeftERegister(),
+                .rotateLeftHRegister => self.rotateLeftHRegister(),
+                .rotateLeftLRegister => self.rotateLeftLRegister(),
+                .rotateLeftHLRegisterAddress => self.rotateLeftHLRegisterAddress(),
+                .rotateLeftAccumulatorRegister => self.rotateLeftAccumulatorRegisterPrefixed(),
+                .rotateLeftThroughCarryBRegister => self.rotateLeftThroughCarryBRegister(),
+                .rotateLeftThroughCarryCRegister => self.rotateLeftThroughCarryCRegister(),
+                .rotateLeftThroughCarryDRegister => self.rotateLeftThroughCarryDRegister(),
+                .rotateLeftThroughCarryERegister => self.rotateLeftThroughCarryERegister(),
+                .rotateLeftThroughCarryHRegister => self.rotateLeftThroughCarryHRegister(),
+                .rotateLeftThroughCarryLRegister => self.rotateLeftThroughCarryLRegister(),
+                .rotateLeftThroughCarryHLRegisterAddress => self.rotateLeftThroughCarryHLRegisterAddress(),
+                .rotateLeftThroughCarryAccumulatorRegister => self.rotateLeftThroughCarryAccumulatorRegisterPrefixed(),
+                .rotateRightBRegister => self.rotateRightBRegister(),
+                .rotateRightCRegister => self.rotateRightCRegister(),
+                .rotateRightDRegister => self.rotateRightDRegister(),
+                .rotateRightERegister => self.rotateRightERegister(),
+                .rotateRightHRegister => self.rotateRightHRegister(),
+                .rotateRightLRegister => self.rotateRightLRegister(),
+                .rotateRightHLRegisterAddress => self.rotateRightHLRegisterAddress(),
+                .rotateRightAccumulatorRegister => self.rotateRightAccumulatorRegisterPrefixed(),
+                .rotateRightThroughCarryBRegister => self.rotateRightThroughCarryBRegister(),
+                .rotateRightThroughCarryCRegister => self.rotateRightThroughCarryCRegister(),
+                .rotateRightThroughCarryDRegister => self.rotateRightThroughCarryDRegister(),
+                .rotateRightThroughCarryERegister => self.rotateRightThroughCarryERegister(),
+                .rotateRightThroughCarryHRegister => self.rotateRightThroughCarryHRegister(),
+                .rotateRightThroughCarryLRegister => self.rotateRightThroughCarryLRegister(),
+                .rotateRightThroughCarryHLRegisterAddress => self.rotateRightThroughCarryHLRegisterAddress(),
+                .rotateRightThroughCarryAccumulatorRegister => self.rotateRightThroughCarryAccumulatorRegisterPrefixed(),
+                .shiftLeftArithmeticBRegister => self.shiftLeftArithmeticBRegister(),
+                .shiftLeftArithmeticCRegister => self.shiftLeftArithmeticCRegister(),
+                .shiftLeftArithmeticDRegister => self.shiftLeftArithmeticDRegister(),
+                .shiftLeftArithmeticERegister => self.shiftLeftArithmeticERegister(),
+                .shiftLeftArithmeticHRegister => self.shiftLeftArithmeticHRegister(),
+                .shiftLeftArithmeticLRegister => self.shiftLeftArithmeticLRegister(),
+                .shiftLeftArithmeticHLRegisterAddress => self.shiftLeftArithmeticHLRegisterAddress(),
+                .shiftLeftArithmeticAccumulatorRegister => self.shiftLeftArithmeticAccumulatorRegister(),
+                .shiftRightArithmeticBRegister => self.shiftRightArithmeticBRegister(),
+                .shiftRightArithmeticCRegister => self.shiftRightArithmeticCRegister(),
+                .shiftRightArithmeticDRegister => self.shiftRightArithmeticDRegister(),
+                .shiftRightArithmeticERegister => self.shiftRightArithmeticERegister(),
+                .shiftRightArithmeticHRegister => self.shiftRightArithmeticHRegister(),
+                .shiftRightArithmeticLRegister => self.shiftRightArithmeticLRegister(),
+                .shiftRightArithmeticHLRegisterAddress => self.shiftRightArithmeticHLRegisterAddress(),
+                .shiftRightArithmeticAccumulatorRegister => self.shiftRightArithmeticAccumulatorRegister(),
+                .swapNibblesBRegister => self.swapNibblesBRegister(),
+                .swapNibblesCRegister => self.swapNibblesCRegister(),
+                .swapNibblesDRegister => self.swapNibblesDRegister(),
+                .swapNibblesERegister => self.swapNibblesERegister(),
+                .swapNibblesHRegister => self.swapNibblesHRegister(),
+                .swapNibblesLRegister => self.swapNibblesLRegister(),
+                .swapNibblesHLRegisterAddress => self.swapNibblesHLRegisterAddress(),
+                .swapNibblesAccumulatorRegister => self.swapNibblesAccumulatorRegister(),
+                .shiftRightLogicalBRegister => self.shiftRightLogicalBRegister(),
+                .shiftRightLogicalCRegister => self.shiftRightLogicalCRegister(),
+                .shiftRightLogicalDRegister => self.shiftRightLogicalDRegister(),
+                .shiftRightLogicalERegister => self.shiftRightLogicalERegister(),
+                .shiftRightLogicalHRegister => self.shiftRightLogicalHRegister(),
+                .shiftRightLogicalLRegister => self.shiftRightLogicalLRegister(),
+                .shiftRightLogicalHLRegisterAddress => self.shiftRightLogicalHLRegisterAddress(),
+                .shiftRightLogicalAccumulatorRegister => self.shiftRightLogicalAccumulatorRegister(),
+                .testBit0BRegister => self.testBit0BRegister(),
+                .testBit0CRegister => self.testBit0CRegister(),
+                .testBit0DRegister => self.testBit0DRegister(),
+                .testBit0ERegister => self.testBit0ERegister(),
+                .testBit0HRegister => self.testBit0HRegister(),
+                .testBit0LRegister => self.testBit0LRegister(),
+                .testBit0HLRegisterAddress => self.testBit0HLRegisterAddress(),
+                .testBit0AccumulatorRegister => self.testBit0AccumulatorRegister(),
+                .testBit1BRegister => self.testBit1BRegister(),
+                .testBit1CRegister => self.testBit1CRegister(),
+                .testBit1DRegister => self.testBit1DRegister(),
+                .testBit1ERegister => self.testBit1ERegister(),
+                .testBit1HRegister => self.testBit1HRegister(),
+                .testBit1LRegister => self.testBit1LRegister(),
+                .testBit1HLRegisterAddress => self.testBit1HLRegisterAddress(),
+                .testBit1AccumulatorRegister => self.testBit1AccumulatorRegister(),
+                .testBit2BRegister => self.testBit2BRegister(),
+                .testBit2CRegister => self.testBit2CRegister(),
+                .testBit2DRegister => self.testBit2DRegister(),
+                .testBit2ERegister => self.testBit2ERegister(),
+                .testBit2HRegister => self.testBit2HRegister(),
+                .testBit2LRegister => self.testBit2LRegister(),
+                .testBit2HLRegisterAddress => self.testBit2HLRegisterAddress(),
+                .testBit2AccumulatorRegister => self.testBit2AccumulatorRegister(),
+                .testBit3BRegister => self.testBit3BRegister(),
+                .testBit3CRegister => self.testBit3CRegister(),
+                .testBit3DRegister => self.testBit3DRegister(),
+                .testBit3ERegister => self.testBit3ERegister(),
+                .testBit3HRegister => self.testBit3HRegister(),
+                .testBit3LRegister => self.testBit3LRegister(),
+                .testBit3HLRegisterAddress => self.testBit3HLRegisterAddress(),
+                .testBit3AccumulatorRegister => self.testBit3AccumulatorRegister(),
+                .testBit4BRegister => self.testBit4BRegister(),
+                .testBit4CRegister => self.testBit4CRegister(),
+                .testBit4DRegister => self.testBit4DRegister(),
+                .testBit4ERegister => self.testBit4ERegister(),
+                .testBit4HRegister => self.testBit4HRegister(),
+                .testBit4LRegister => self.testBit4LRegister(),
+                .testBit4HLRegisterAddress => self.testBit4HLRegisterAddress(),
+                .testBit4AccumulatorRegister => self.testBit4AccumulatorRegister(),
+                .testBit5BRegister => self.testBit5BRegister(),
+                .testBit5CRegister => self.testBit5CRegister(),
+                .testBit5DRegister => self.testBit5DRegister(),
+                .testBit5ERegister => self.testBit5ERegister(),
+                .testBit5HRegister => self.testBit5HRegister(),
+                .testBit5LRegister => self.testBit5LRegister(),
+                .testBit5HLRegisterAddress => self.testBit5HLRegisterAddress(),
+                .testBit5AccumulatorRegister => self.testBit5AccumulatorRegister(),
+                .testBit6BRegister => self.testBit6BRegister(),
+                .testBit6CRegister => self.testBit6CRegister(),
+                .testBit6DRegister => self.testBit6DRegister(),
+                .testBit6ERegister => self.testBit6ERegister(),
+                .testBit6HRegister => self.testBit6HRegister(),
+                .testBit6LRegister => self.testBit6LRegister(),
+                .testBit6HLRegisterAddress => self.testBit6HLRegisterAddress(),
+                .testBit6AccumulatorRegister => self.testBit6AccumulatorRegister(),
+                .testBit7BRegister => self.testBit7BRegister(),
+                .testBit7CRegister => self.testBit7CRegister(),
+                .testBit7DRegister => self.testBit7DRegister(),
+                .testBit7ERegister => self.testBit7ERegister(),
+                .testBit7HRegister => self.testBit7HRegister(),
+                .testBit7LRegister => self.testBit7LRegister(),
+                .testBit7HLRegisterAddress => self.testBit7HLRegisterAddress(),
+                .testBit7AccumulatorRegister => self.testBit7AccumulatorRegister(),
+                .resetBit0BRegister => self.resetBit0BRegister(),
+                .resetBit0CRegister => self.resetBit0CRegister(),
+                .resetBit0DRegister => self.resetBit0DRegister(),
+                .resetBit0ERegister => self.resetBit0ERegister(),
+                .resetBit0HRegister => self.resetBit0HRegister(),
+                .resetBit0LRegister => self.resetBit0LRegister(),
+                .resetBit0HLRegisterAddress => self.resetBit0HLRegisterAddress(),
+                .resetBit0AccumulatorRegister => self.resetBit0AccumulatorRegister(),
+                .resetBit1BRegister => self.resetBit1BRegister(),
+                .resetBit1CRegister => self.resetBit1CRegister(),
+                .resetBit1DRegister => self.resetBit1DRegister(),
+                .resetBit1ERegister => self.resetBit1ERegister(),
+                .resetBit1HRegister => self.resetBit1HRegister(),
+                .resetBit1LRegister => self.resetBit1LRegister(),
+                .resetBit1HLRegisterAddress => self.resetBit1HLRegisterAddress(),
+                .resetBit1AccumulatorRegister => self.resetBit1AccumulatorRegister(),
+                .resetBit2BRegister => self.resetBit2BRegister(),
+                .resetBit2CRegister => self.resetBit2CRegister(),
+                .resetBit2DRegister => self.resetBit2DRegister(),
+                .resetBit2ERegister => self.resetBit2ERegister(),
+                .resetBit2HRegister => self.resetBit2HRegister(),
+                .resetBit2LRegister => self.resetBit2LRegister(),
+                .resetBit2HLRegisterAddress => self.resetBit2HLRegisterAddress(),
+                .resetBit2AccumulatorRegister => self.resetBit2AccumulatorRegister(),
+                .resetBit3BRegister => self.resetBit3BRegister(),
+                .resetBit3CRegister => self.resetBit3CRegister(),
+                .resetBit3DRegister => self.resetBit3DRegister(),
+                .resetBit3ERegister => self.resetBit3ERegister(),
+                .resetBit3HRegister => self.resetBit3HRegister(),
+                .resetBit3LRegister => self.resetBit3LRegister(),
+                .resetBit3HLRegisterAddress => self.resetBit3HLRegisterAddress(),
+                .resetBit3AccumulatorRegister => self.resetBit3AccumulatorRegister(),
+                .resetBit4BRegister => self.resetBit4BRegister(),
+                .resetBit4CRegister => self.resetBit4CRegister(),
+                .resetBit4DRegister => self.resetBit4DRegister(),
+                .resetBit4ERegister => self.resetBit4ERegister(),
+                .resetBit4HRegister => self.resetBit4HRegister(),
+                .resetBit4LRegister => self.resetBit4LRegister(),
+                .resetBit4HLRegisterAddress => self.resetBit4HLRegisterAddress(),
+                .resetBit4AccumulatorRegister => self.resetBit4AccumulatorRegister(),
+                .resetBit5BRegister => self.resetBit5BRegister(),
+                .resetBit5CRegister => self.resetBit5CRegister(),
+                .resetBit5DRegister => self.resetBit5DRegister(),
+                .resetBit5ERegister => self.resetBit5ERegister(),
+                .resetBit5HRegister => self.resetBit5HRegister(),
+                .resetBit5LRegister => self.resetBit5LRegister(),
+                .resetBit5HLRegisterAddress => self.resetBit5HLRegisterAddress(),
+                .resetBit5AccumulatorRegister => self.resetBit5AccumulatorRegister(),
+                .resetBit6BRegister => self.resetBit6BRegister(),
+                .resetBit6CRegister => self.resetBit6CRegister(),
+                .resetBit6DRegister => self.resetBit6DRegister(),
+                .resetBit6ERegister => self.resetBit6ERegister(),
+                .resetBit6HRegister => self.resetBit6HRegister(),
+                .resetBit6LRegister => self.resetBit6LRegister(),
+                .resetBit6HLRegisterAddress => self.resetBit6HLRegisterAddress(),
+                .resetBit6AccumulatorRegister => self.resetBit6AccumulatorRegister(),
+                .resetBit7BRegister => self.resetBit7BRegister(),
+                .resetBit7CRegister => self.resetBit7CRegister(),
+                .resetBit7DRegister => self.resetBit7DRegister(),
+                .resetBit7ERegister => self.resetBit7ERegister(),
+                .resetBit7HRegister => self.resetBit7HRegister(),
+                .resetBit7LRegister => self.resetBit7LRegister(),
+                .resetBit7HLRegisterAddress => self.resetBit7HLRegisterAddress(),
+                .resetBit7AccumulatorRegister => self.resetBit7AccumulatorRegister(),
+                .setBit0BRegister => self.setBit0BRegister(),
+                .setBit0CRegister => self.setBit0CRegister(),
+                .setBit0DRegister => self.setBit0DRegister(),
+                .setBit0ERegister => self.setBit0ERegister(),
+                .setBit0HRegister => self.setBit0HRegister(),
+                .setBit0LRegister => self.setBit0LRegister(),
+                .setBit0HLRegisterAddress => self.setBit0HLRegisterAddress(),
+                .setBit0AccumulatorRegister => self.setBit0AccumulatorRegister(),
+                .setBit1BRegister => self.setBit1BRegister(),
+                .setBit1CRegister => self.setBit1CRegister(),
+                .setBit1DRegister => self.setBit1DRegister(),
+                .setBit1ERegister => self.setBit1ERegister(),
+                .setBit1HRegister => self.setBit1HRegister(),
+                .setBit1LRegister => self.setBit1LRegister(),
+                .setBit1HLRegisterAddress => self.setBit1HLRegisterAddress(),
+                .setBit1AccumulatorRegister => self.setBit1AccumulatorRegister(),
+                .setBit2BRegister => self.setBit2BRegister(),
+                .setBit2CRegister => self.setBit2CRegister(),
+                .setBit2DRegister => self.setBit2DRegister(),
+                .setBit2ERegister => self.setBit2ERegister(),
+                .setBit2HRegister => self.setBit2HRegister(),
+                .setBit2LRegister => self.setBit2LRegister(),
+                .setBit2HLRegisterAddress => self.setBit2HLRegisterAddress(),
+                .setBit2AccumulatorRegister => self.setBit2AccumulatorRegister(),
+                .setBit3BRegister => self.setBit3BRegister(),
+                .setBit3CRegister => self.setBit3CRegister(),
+                .setBit3DRegister => self.setBit3DRegister(),
+                .setBit3ERegister => self.setBit3ERegister(),
+                .setBit3HRegister => self.setBit3HRegister(),
+                .setBit3LRegister => self.setBit3LRegister(),
+                .setBit3HLRegisterAddress => self.setBit3HLRegisterAddress(),
+                .setBit3AccumulatorRegister => self.setBit3AccumulatorRegister(),
+                .setBit4BRegister => self.setBit4BRegister(),
+                .setBit4CRegister => self.setBit4CRegister(),
+                .setBit4DRegister => self.setBit4DRegister(),
+                .setBit4ERegister => self.setBit4ERegister(),
+                .setBit4HRegister => self.setBit4HRegister(),
+                .setBit4LRegister => self.setBit4LRegister(),
+                .setBit4HLRegisterAddress => self.setBit4HLRegisterAddress(),
+                .setBit4AccumulatorRegister => self.setBit4AccumulatorRegister(),
+                .setBit5BRegister => self.setBit5BRegister(),
+                .setBit5CRegister => self.setBit5CRegister(),
+                .setBit5DRegister => self.setBit5DRegister(),
+                .setBit5ERegister => self.setBit5ERegister(),
+                .setBit5HRegister => self.setBit5HRegister(),
+                .setBit5LRegister => self.setBit5LRegister(),
+                .setBit5HLRegisterAddress => self.setBit5HLRegisterAddress(),
+                .setBit5AccumulatorRegister => self.setBit5AccumulatorRegister(),
+                .setBit6BRegister => self.setBit6BRegister(),
+                .setBit6CRegister => self.setBit6CRegister(),
+                .setBit6DRegister => self.setBit6DRegister(),
+                .setBit6ERegister => self.setBit6ERegister(),
+                .setBit6HRegister => self.setBit6HRegister(),
+                .setBit6LRegister => self.setBit6LRegister(),
+                .setBit6HLRegisterAddress => self.setBit6HLRegisterAddress(),
+                .setBit6AccumulatorRegister => self.setBit6AccumulatorRegister(),
+                .setBit7BRegister => self.setBit7BRegister(),
+                .setBit7CRegister => self.setBit7CRegister(),
+                .setBit7DRegister => self.setBit7DRegister(),
+                .setBit7ERegister => self.setBit7ERegister(),
+                .setBit7HRegister => self.setBit7HRegister(),
+                .setBit7LRegister => self.setBit7LRegister(),
+                .setBit7HLRegisterAddress => self.setBit7HLRegisterAddress(),
+                .setBit7AccumulatorRegister => self.setBit7AccumulatorRegister(),
             },
         };
-
-        return cycles;
     }
 
     pub fn step(self: *CPU) u8 {
+        const start_program_counter = self.registers.program_counter;
+
         var intruction_byte = self.readNextByte();
         const is_prefixed = intruction_byte == 0xCB;
 
@@ -573,7 +570,45 @@ pub const CPU = struct {
 
         const cycles = self.execute(instruction);
 
-        return cycles;
+        var interrupts = self.memoryBus.step(cycles);
+
+        if (interrupts.hasInterrupt()) {
+            self.is_halted = false;
+        }
+
+        if (self.is_halted) {
+            self.registers.program_counter = start_program_counter;
+        }
+
+        var interrupted = false;
+        if (self.interrupts_enabled) {
+            if (interrupts.vblank) {
+                interrupted = true;
+                self.memoryBus.interrupt_request.vblank = false;
+                self.interrupt(addr.InterruptLocation.VBlank);
+            }
+
+            if (interrupts.lcdstat) {
+                interrupted = true;
+                self.memoryBus.interrupt_request.lcdstat = false;
+                self.interrupt(addr.InterruptLocation.LCDStat);
+            }
+
+            if (interrupts.timer) {
+                interrupted = true;
+                self.memoryBus.interrupt_request.timer = false;
+                self.interrupt(addr.InterruptLocation.Timer);
+            }
+        }
+
+        return if (interrupted) cycles + 12 else cycles;
+    }
+
+    fn interrupt(self: *CPU, location: addr.InterruptLocation) void {
+        self.interrupts_enabled = false;
+        self.pushStackPointer(self.registers.program_counter);
+        self.registers.program_counter = @intFromEnum(location);
+        _ = self.memoryBus.step(12);
     }
 
     fn incrementProgramCounter(self: *CPU) void {
@@ -604,17 +639,19 @@ pub const CPU = struct {
 
     fn pushStackPointer(self: *CPU, value: u16) void {
         self.registers.stack_pointer -%= 1;
-        self.memoryBus.writeByte(self.registers.stack_pointer, @as(u8, (value & 0xFF00) >> 8));
+        self.memoryBus.writeByte(self.registers.stack_pointer, @as(u8, @truncate((value & 0xFF00) >> 8)));
 
         self.registers.stack_pointer -%= 1;
-        self.memoryBus.writeByte(self.registers.stack_pointer, @as(u8, value & 0xFF));
+        self.memoryBus.writeByte(self.registers.stack_pointer, @as(u8, @truncate(value & 0xFF)));
     }
 
-    fn noop() u8 {
+    fn noop(self: *CPU) u8 {
+        _ = self;
         return 4;
     }
 
-    fn stop() u8 {
+    fn stop(self: *CPU) u8 {
+        _ = self;
         return 4;
     }
 
@@ -663,24 +700,24 @@ pub const CPU = struct {
         return 12;
     }
 
-    fn loadToBCRegisterAddressDataFromAccumulatorRegister(self: *CPU) void {
+    fn loadToBCRegisterAddressDataFromAccumulatorRegister(self: *CPU) u8 {
         self.memoryBus.writeByte(self.registers.getBC(), self.registers.accumulator);
         return 8;
     }
 
-    fn loadToDERegisterAddressDataFromAccumulatorRegister(self: *CPU) void {
+    fn loadToDERegisterAddressDataFromAccumulatorRegister(self: *CPU) u8 {
         self.memoryBus.writeByte(self.registers.getDE(), self.registers.accumulator);
         return 8;
     }
 
-    fn loadToHLRegisterAddressDataFromAccumulatorRegisterThenIncrement(self: *CPU) void {
+    fn loadToHLRegisterAddressDataFromAccumulatorRegisterThenIncrement(self: *CPU) u8 {
         const address = self.registers.getHL();
         self.memoryBus.writeByte(address, self.registers.accumulator);
         self.registers.setHL(address +% 1);
         return 8;
     }
 
-    fn loadToHLRegisterAddressDataFromAccumulatorRegisterThenDecrement(self: *CPU) void {
+    fn loadToHLRegisterAddressDataFromAccumulatorRegisterThenDecrement(self: *CPU) u8 {
         const address = self.registers.getHL();
         self.memoryBus.writeByte(address, self.registers.accumulator);
         self.registers.setHL(address -% 1);
@@ -1023,7 +1060,7 @@ pub const CPU = struct {
         return 8;
     }
 
-    fn loadToERegisterDataFromAccumulatorRegister(self: *CPU) 8 {
+    fn loadToERegisterDataFromAccumulatorRegister(self: *CPU) u8 {
         self.registers.e = self.registers.accumulator;
         return 4;
     }
@@ -1385,7 +1422,7 @@ pub const CPU = struct {
     }
 
     fn subWithCarryToAccumulatorRegisterDataFromERegister(self: *CPU) u8 {
-        self.subToAccumulator(self.registers.E, true);
+        self.subToAccumulator(self.registers.e, true);
         return 4;
     }
 
@@ -1474,7 +1511,7 @@ pub const CPU = struct {
     }
 
     fn andToAccumulator(self: *CPU, value: u8) void {
-        const new_value = self.register.accumulator & value;
+        const new_value = self.registers.accumulator & value;
 
         self.registers.flags.zero = new_value == 0;
         self.registers.flags.subtract = false;
@@ -1530,7 +1567,7 @@ pub const CPU = struct {
     }
 
     fn xorToAccumulator(self: *CPU, value: u8) void {
-        const new_value = self.register.accumulator ^ value;
+        const new_value = self.registers.accumulator ^ value;
 
         self.registers.flags.zero = new_value == 0;
         self.registers.flags.subtract = false;
@@ -1586,7 +1623,7 @@ pub const CPU = struct {
     }
 
     fn orToAccumulator(self: *CPU, value: u8) void {
-        const new_value = self.register.accumulator | value;
+        const new_value = self.registers.accumulator | value;
 
         self.registers.flags.zero = new_value == 0;
         self.registers.flags.subtract = false;
@@ -1654,13 +1691,15 @@ pub const CPU = struct {
     }
 
     fn rotateLeft(self: *CPU, value: u8, set_zero: bool) u8 {
-        const carry: bool = @intCast((value & 0b1000_0000) >> 7);
+        // const shifted: u1 = @truncate((value & 0b1000_0000) >> 7);
+        const carry = (value & 0b1000_0000) >> 7;
+        const tuncated_carry: u1 = @truncate(carry);
         const new_value = std.math.rotl(u8, value, 1) | carry;
 
         self.registers.flags.zero = set_zero and new_value == 0;
-        self.registers.flags.subtract = 0;
-        self.registers.flags.half_carry = 0;
-        self.registers.flags.carry = carry;
+        self.registers.flags.subtract = false;
+        self.registers.flags.half_carry = false;
+        self.registers.flags.carry = @bitCast(tuncated_carry);
 
         return new_value;
     }
@@ -1704,7 +1743,7 @@ pub const CPU = struct {
     }
 
     fn rotateRightThroughCarry(self: *CPU, value: u8, set_zero: bool) u8 {
-        const carry_bit = @intFromBool(self.registers.flags.carry) << 7;
+        const carry_bit = @as(u8, @intFromBool(self.registers.flags.carry)) << 7;
         const new_value = carry_bit | (value >> 1);
 
         self.registers.flags.zero = set_zero and new_value == 0;
@@ -1749,31 +1788,36 @@ pub const CPU = struct {
     }
 
     fn jumpRelativeAlways(self: *CPU) u8 {
-        _ = self;
-        return jumpRelativeWithCondition(true);
+        return self.jumpRelativeWithCondition(true);
     }
 
     fn jumpRelativeIfZero(self: *CPU) u8 {
-        return jumpRelativeWithCondition(self.registers.flags.zero);
+        return self.jumpRelativeWithCondition(self.registers.flags.zero);
     }
 
     fn jumpRelativeIfCarry(self: *CPU) u8 {
-        return jumpRelativeWithCondition(self.registers.flags.carry);
+        return self.jumpRelativeWithCondition(self.registers.flags.carry);
     }
 
     fn jumpRelativeIfNotZero(self: *CPU) u8 {
-        return jumpRelativeWithCondition(!self.registers.flags.zero);
+        return self.jumpRelativeWithCondition(!self.registers.flags.zero);
     }
 
     fn jumpRelativeIfNotCarry(self: *CPU) u8 {
-        return jumpRelativeWithCondition(!self.registers.flags.carry);
+        return self.jumpRelativeWithCondition(!self.registers.flags.carry);
     }
 
     fn jumpRelativeWithCondition(self: *CPU, condition: bool) u8 {
-        const byte = @as(i8, self.readNextByte());
+        const signed_value: i8 = @intCast(self.readNextByte());
+        const abs_value = @abs(signed_value);
+        const abs_value_u8: u8 = @intCast(abs_value);
 
         if (condition) {
-            self.registers.program_counter +%= byte;
+            if (signed_value < 0) {
+                self.registers.program_counter -%= abs_value_u8;
+            } else {
+                self.registers.program_counter +%= abs_value_u8;
+            }
             return 12;
         }
 
@@ -1801,7 +1845,7 @@ pub const CPU = struct {
         return 16;
     }
 
-    fn returnAlwaysWithInterrupt(self: *CPU) void {
+    fn returnAlwaysWithInterrupt(self: *CPU) u8 {
         self.interrupts_enabled = true;
         _ = self.returnIf(true);
         return 16;
@@ -1898,22 +1942,22 @@ pub const CPU = struct {
     }
 
     fn pushBCRegister(self: *CPU) u8 {
-        self.pushStackPointer(self.getBC());
+        self.pushStackPointer(self.registers.getBC());
         return 16;
     }
 
     fn pushDERegister(self: *CPU) u8 {
-        self.pushStackPointer(self.getDE());
+        self.pushStackPointer(self.registers.getDE());
         return 16;
     }
 
     fn pushHLRegister(self: *CPU) u8 {
-        self.pushStackPointer(self.getHL());
+        self.pushStackPointer(self.registers.getHL());
         return 16;
     }
 
     fn pushAFRegister(self: *CPU) u8 {
-        self.pushStackPointer(self.getAF());
+        self.pushStackPointer(self.registers.getAF());
         return 16;
     }
 
@@ -1961,12 +2005,12 @@ pub const CPU = struct {
     }
 
     fn decimalAdjustAccumulator(self: *CPU) u8 {
-        self.decimalAdjust(self.registers.accumulator);
+        self.registers.accumulator = self.decimalAdjust(self.registers.accumulator);
         return 4;
     }
 
     fn decimalAdjust(self: *CPU, value: u8) u8 {
-        var carry = false;
+        var carry: bool = false;
 
         var result: u8 = 0x0;
 
@@ -1985,7 +2029,7 @@ pub const CPU = struct {
             result = tempResult;
         } else if (self.registers.flags.carry) {
             carry = true;
-            result = value +% (if (self.registers.flags.half_carry) 0x9A else 0xA0);
+            result = value +% @as(u8, (if (self.registers.flags.half_carry) 0x9A else 0xA0));
         } else if (self.registers.flags.half_carry) {
             result = value +% 0xFA;
         } else {
@@ -2007,7 +2051,7 @@ pub const CPU = struct {
     }
 
     fn complementAccumulatorRegister(self: *CPU) u8 {
-        self.complement(self.registers.accumulator);
+        self.registers.accumulator = self.complement(self.registers.accumulator);
         return 4;
     }
 
@@ -2718,8 +2762,8 @@ pub const CPU = struct {
         return 8;
     }
 
-    fn testBit(self: *CPU, value: u8, bit_position: u8) void {
-        const result = (value >> bit_position) & 0b1;
+    fn testBit(self: *CPU, value: u8, comptime bit_position: u7) void {
+        const result: u8 = (value >> bit_position) & 0b1;
         self.registers.flags.zero = result == 0;
         self.registers.flags.subtract = false;
         self.registers.flags.half_carry = true;
@@ -3047,9 +3091,9 @@ pub const CPU = struct {
         return 8;
     }
 
-    fn resetBit(self: *CPU, value: u8, bit_position: u8) u8 {
+    fn resetBit(self: *CPU, value: u8, comptime bit_position: u7) u8 {
         _ = self;
-        return value & ~(0b1 << bit_position);
+        return value & ~(@as(u8, 0b1) << bit_position);
     }
 
     fn setBit0BRegister(self: *CPU) u8 {
@@ -3374,8 +3418,8 @@ pub const CPU = struct {
         return 8;
     }
 
-    fn setBit(self: *CPU, value: u8, bit_position: u8) u8 {
+    fn setBit(self: *CPU, value: u8, comptime bit_position: u7) u8 {
         _ = self;
-        return value | (0b1 << bit_position);
+        return value | (@as(u8, 0b1) << bit_position);
     }
 };

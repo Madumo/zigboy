@@ -40,3 +40,9 @@ pub const ZERO_PAGE_END: u16 = 0xFFFE;
 pub const ZERO_PAGE_SIZE: u16 = ZERO_PAGE_END - ZERO_PAGE_BEGIN + 1;
 
 pub const INTERRUPT_ENABLE_REGISTER: u16 = 0xFFFF;
+
+pub const InterruptLocation = enum(u16) {
+    VBlank = 0x40,
+    LCDStat = 0x48,
+    Timer = 0x50,
+};

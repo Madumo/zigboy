@@ -12,11 +12,11 @@ pub const Joypad = packed struct {
     select_dpads: ButtonState = .released,
     _padding: u2 = 0,
 
-    fn toByte(self: *Joypad) u8 {
+    pub fn toByte(self: *Joypad) u8 {
         return @bitCast(self.*);
     }
 
-    fn fromByte(self: *Joypad, value: u8) void {
-        self.* = @bitCast(value & 0b0011_1111);
+    pub fn fromByte(self: *Joypad, byte: u8) void {
+        self.* = @bitCast(byte & 0b0011_1111);
     }
 };
