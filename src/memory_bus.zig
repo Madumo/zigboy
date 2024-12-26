@@ -8,7 +8,7 @@ const Timer = timer.Timer;
 const Frequency = timer.Frequency;
 
 pub const MemoryBus = struct {
-    boot_rom: ?[addr.BOOT_ROM_SIZE]u8 = null,
+    boot_rom: ?*const [addr.BOOT_ROM_SIZE]u8 = null,
     rom_bank_0: [addr.ROM_BANK_0_SIZE]u8 = std.mem.zeroes([addr.ROM_BANK_0_SIZE]u8),
     rom_bank_n: [addr.ROM_BANK_N_SIZE]u8 = std.mem.zeroes([addr.ROM_BANK_N_SIZE]u8),
     external_ram: [addr.EXTERNAL_RAM_SIZE]u8 = std.mem.zeroes([addr.EXTERNAL_RAM_SIZE]u8),
@@ -25,7 +25,7 @@ pub const MemoryBus = struct {
     timer: Timer = Timer{ .frequency = Frequency.F4096 },
     divider: Timer = Timer{ .frequency = Frequency.F16384, .on = true },
 
-    pub fn init(boot_rom: [addr.BOOT_ROM_SIZE]u8) MemoryBus {
+    pub fn init(boot_rom: *const [addr.BOOT_ROM_SIZE]u8) MemoryBus {
         //const rom_bank_0: [addr.ROM_BANK_0_SIZE]u8 = game_rom.items[0..addr.ROM_BANK_0_SIZE];
         //const rom_bank_n: [addr.ROM_BANK_N_SIZE]u8 = game_rom.items[addr.ROM_BANK_0_SIZE .. addr.ROM_BANK_0_SIZE + addr.ROM_BANK_N_SIZE];
 
