@@ -125,7 +125,16 @@ pub const MemoryBus = struct {
             0xFF42 => self.ppu.viewport_y = byte,
             0xFF43 => self.ppu.viewport_x = byte,
             0xFF45 => self.ppu.line_check = byte,
-            0xFF46 => {}, // TODO: DMA transfer
+            0xFF46 => {
+                const dma_source: u16 = @as(u16, @intCast(byte)) << 8;
+                const dma_destination: u16 = 0xFE00;
+                for (0..150) |offset| {
+                    self.writeByte(
+                        @intCast(dma_destination + offset),
+                        self.readByte(@intCast(dma_source + offset)),
+                    );
+                }
+            },
             0xFF47 => self.ppu.background_color_palette.putByte(byte),
             0xFF48 => self.ppu.object_0_color_palette.putByte(byte),
             0xFF49 => self.ppu.object_1_color_palette.putByte(byte),
