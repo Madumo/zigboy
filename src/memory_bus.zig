@@ -6,6 +6,7 @@ const InterruptFlags = @import("interrupt_flags.zig").InterruptFlags;
 const timer = @import("timer.zig");
 const Timer = timer.Timer;
 const Frequency = timer.Frequency;
+const TimerControlFlags = timer.TimerControlFlags;
 
 pub const MemoryBus = struct {
     boot_rom: ?*const [addr.BOOT_ROM_SIZE]u8 = null,
@@ -22,8 +23,8 @@ pub const MemoryBus = struct {
 
     joypad: Joypad = Joypad{},
 
-    timer: Timer = Timer{ .frequency = Frequency.F4096 },
-    divider: Timer = Timer{ .frequency = Frequency.F16384, .on = true },
+    timer: Timer = Timer{ .timerControl = TimerControlFlags{ .frequency = Frequency.F4096 } },
+    divider: Timer = Timer{ .timerControl = TimerControlFlags{ .frequency = Frequency.F16384, .enable = true } },
 
     pub fn init(boot_rom: *const [addr.BOOT_ROM_SIZE]u8) MemoryBus {
         //const rom_bank_0: [addr.ROM_BANK_0_SIZE]u8 = game_rom.items[0..addr.ROM_BANK_0_SIZE];
