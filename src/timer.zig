@@ -20,7 +20,7 @@ pub const TimerControlFlags = packed struct {
     _padding: u5 = 0,
 
     pub fn fromByte(byte: u8) TimerControlFlags {
-        return @bitCast(byte & 0b1111_0000);
+        return @bitCast(byte & 0b0000_0111);
     }
 
     pub fn toByte(self: *TimerControlFlags) u8 {
@@ -28,7 +28,7 @@ pub const TimerControlFlags = packed struct {
     }
 
     pub fn putByte(self: *TimerControlFlags, byte: u8) void {
-        self.* = @bitCast(byte & 0b1111_0000);
+        self.* = @bitCast(byte & 0b0000_0111);
     }
 };
 
