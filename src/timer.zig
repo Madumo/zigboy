@@ -17,6 +17,7 @@ pub const Frequency = enum(u2) {
 pub const TimerControlFlags = packed struct {
     frequency: Frequency,
     enable: bool = true,
+
     _padding: u5 = 0,
 
     pub fn fromByte(byte: u8) TimerControlFlags {
