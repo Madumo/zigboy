@@ -88,8 +88,8 @@ pub const MemoryBus = struct {
             0xFF0F => self.interrupt_request.toByte(),
             0xFF40 => self.ppu.lcd_control.toByte(),
             0xFF41 => self.ppu.lcd_status.toByte(),
-            0xFF42 => 0, // TODO: y offset,
-            0xFF44 => 0, // TODO: line,
+            0xFF42 => self.ppu.viewport_y,
+            0xFF44 => self.ppu.line,
             else => std.debug.panic("Unsuported address 0x{X}", .{address}),
         };
     }
@@ -122,15 +122,15 @@ pub const MemoryBus = struct {
             0xFF30...0xFF3F => {}, // TODO: Audio
             0xFF40 => self.ppu.lcd_control.putByte(byte),
             0xFF41 => self.ppu.lcd_status.putByte(byte),
-            0xFF42 => {}, // TODO: y offset
-            0xFF43 => {}, // TODO: x offset
-            0xFF45 => {}, // TODO: line check
+            0xFF42 => self.ppu.viewport_y = byte,
+            0xFF43 => self.ppu.viewport_x = byte,
+            0xFF45 => self.ppu.line_check = byte,
             0xFF46 => {}, // TODO: DMA transfer
-            0xFF47 => {}, // TODO: BG Palette data,
-            0xFF48 => {}, // TODO: Obj 0 palette
-            0xFF49 => {}, // TODO: Obj 1 palette
-            0xFF4A => {}, // TODO: Scroll y
-            0xFF4B => {}, // TODO: Scroll x
+            0xFF47 => self.ppu.background_color_palette.putByte(byte),
+            0xFF48 => self.ppu.object_0_color_palette.putByte(byte),
+            0xFF49 => self.ppu.object_1_color_palette.putByte(byte),
+            0xFF4A => self.ppu.window_y = byte,
+            0xFF4B => self.ppu.window_x = byte,
             0xFF50 => self.boot_rom = null,
             0xFF7F => {}, // Does nothing
             else => std.debug.panic("Unsuported address 0x{X}", .{address}),
