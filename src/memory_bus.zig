@@ -81,13 +81,16 @@ pub const MemoryBus = struct {
         return switch (address) {
             0xFF00 => self.joypad.toByte(),
             0xFF01...0xFF02 => 0, // TODO: Serial port,
-            0xFF04 => 0, // TODO: timer divider,
+            0xFF04 => self.divider.value,
+            0xFF05 => self.timer.value,
+            0xFF06 => self.timer.modulo,
+            0xFF07 => self.timer.timerControl.toByte(),
             0xFF0F => self.interrupt_request.toByte(),
             0xFF40 => 0, // TODO: lcd control,
             0xFF41 => 0, // TODO: lcd status,
             0xFF42 => 0, // TODO: y offset,
             0xFF44 => 0, // TODO: line,
-            else => unreachable,
+            else => std.debug.panic("Unsuported address 0x{X}", .{address}),
         };
     }
 
