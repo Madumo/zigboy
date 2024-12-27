@@ -16,7 +16,7 @@ pub const Joypad = packed struct {
         return @bitCast(self.*);
     }
 
-    pub fn fromByte(self: *Joypad, byte: u8) void {
+    pub fn putByte(self: *Joypad, byte: u8) void {
         self.* = @bitCast(byte & 0b0011_1111);
     }
 };
